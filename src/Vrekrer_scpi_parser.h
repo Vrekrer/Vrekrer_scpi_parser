@@ -21,6 +21,9 @@ class SCPI_String_Array {
  public:
   String operator[](const byte index);
   void Append(String value);
+  String Pop();
+  String First();
+  String Last();
   byte Size();
  protected:
   byte size_ = 0;
@@ -43,17 +46,20 @@ typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters);
 
 class SCPI_Parser {
  public:
+  void SetCommandTreeBase(String tree_base);
   void RegisterCommand(String command, SCPI_caller_t caller);
   void Execute(String message);
  protected:
   void AddToken(String token);
+  String Execute_(String message);
   String GetCommandCode(SCPI_Commands commands);
   byte tokens_size_ = 0;
   String tokens_[SCPI_MAX_TOKENS];
   byte codes_size_ = 0;
   String valid_codes_[SCPI_MAX_COMMANDS];
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS];
-  String scope_;
+  String execute_scope_ = "";
+  String tree_code_ = "";
 };
 
 #endif

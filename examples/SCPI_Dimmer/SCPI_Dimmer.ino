@@ -9,10 +9,11 @@ const int intensity[11] = {0, 3, 5, 9, 15, 24, 38, 62, 99, 159, 255};
 void setup()
 {
   my_instrument.RegisterCommand("*IDN?", &Identify);
-  my_instrument.RegisterCommand("SYSTem:LED:BRIGhtness", &SetBrightness);
-  my_instrument.RegisterCommand("SYSTem:LED:BRIGhtness?", &GetBrightness);
-  my_instrument.RegisterCommand("SYSTem:LED:BRIGhtness:INCrease", &IncDecBrightness);
-  my_instrument.RegisterCommand("SYSTem:LED:BRIGhtness:DECrease", &IncDecBrightness);
+  my_instrument.SetCommandTreeBase("SYSTem:LED");
+    my_instrument.RegisterCommand(":BRIGhtness", &SetBrightness);
+    my_instrument.RegisterCommand(":BRIGhtness?", &GetBrightness);
+    my_instrument.RegisterCommand(":BRIGhtness:INCrease", &IncDecBrightness);
+    my_instrument.RegisterCommand(":BRIGhtness:DECrease", &IncDecBrightness);
   
   Serial.begin(9600);
   pinMode(ledPin, OUTPUT);
@@ -34,7 +35,7 @@ void loop()
 }
 
 void Identify(SCPI_Commands commands, SCPI_Parameters parameters){
-  Serial.println("Vrekrer,Arduino SCPI Dimmer,#00,v1.0");
+  Serial.println("Vrekrer,Arduino SCPI Dimmer,#00,v0.2");
 }
 
 void SetBrightness(SCPI_Commands commands, SCPI_Parameters parameters){
