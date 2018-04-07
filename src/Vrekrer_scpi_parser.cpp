@@ -160,7 +160,7 @@ String SCPI_Parser::GetCommandCode(SCPI_Commands commands) {
     }
     for (int j = 0; j < tokens_size_; j++) {
       String short_token = tokens_[j];
-      for (int t = 0; i < short_token.length(); t++)
+      for (int t = 0; t < short_token.length(); t++)
         if (isLowerCase(short_token.charAt(t))) {
           short_token.remove(t);
           break;
@@ -193,7 +193,6 @@ void SCPI_Parser::RegisterCommand(String command, SCPI_caller_t caller) {
 }
 
 String SCPI_Parser::Execute_(String message) {
-  Serial.println(String("Execute : ") + message);
   SCPI_Commands commands(message);
   SCPI_Parameters parameters(message);
   
