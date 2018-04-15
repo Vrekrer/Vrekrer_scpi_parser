@@ -10,7 +10,7 @@
 #define SCPI_MAX_TOKENS 15
 #endif 
 
-// Maximun number of register commands 
+// Maximun number of registered commands 
 #ifndef SCPI_MAX_COMMANDS
 #define SCPI_MAX_COMMANDS 20
 #endif 
@@ -19,47 +19,55 @@
 
 class SCPI_String_Array {
  public:
-  String operator[](const byte index);
-  void Append(String value);
-  String Pop();
-  String First();
-  String Last();
-  byte Size();
+  SCPI_String_Array();
+  ~SCPI_String_Array();
+  char* operator[](const byte index);
+  void Append(char* value);
+  char* Pop();
+  char* First();
+  char* Last();
+  uint8_t Size();
  protected:
-  byte size_ = 0;
-  String values_[SCPI_ARRAY_SYZE];
+  uint8_t size_ = 0;
+  char* values_[SCPI_ARRAY_SYZE];
 };
 
 class SCPI_Commands : public SCPI_String_Array {
  public:
   SCPI_Commands();
-  SCPI_Commands(String message);
+  SCPI_Commands(char* message);
+  char* not_processed_message;
 };
 
 class SCPI_Parameters : public SCPI_String_Array {
  public:
   SCPI_Parameters();
-  SCPI_Parameters(String message);
+  SCPI_Parameters(char *message);
+  char* not_processed_message;
 };
 
-typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters);
+typedef SCPI_Commands SCPI_C;
+typedef SCPI_Parameters SCPI_P;
+typedef void (*SCPI_caller_t)(SCPI_C, SCPI_P, Stream&);
 
 class SCPI_Parser {
  public:
-  void SetCommandTreeBase(String tree_base);
-  void RegisterCommand(String command, SCPI_caller_t caller);
-  void Execute(String message);
+  void SetCommandTreeBase(char* tree_base);
+  void RegisterCommand(char* command, SCPI_caller_t caller);
+  void Execute(char* message, Stream& interface);
+  void ProcessInput(Stream &interface, char* term_chars);
+  char* GetMessage(Stream& interface, char* term_chars);
+  void PrintDebugInfo();
  protected:
-  void AddToken(String token);
-  String Execute_(String message);
-  String GetCommandCode(SCPI_Commands commands);
-  byte tokens_size_ = 0;
-  String tokens_[SCPI_MAX_TOKENS];
-  byte codes_size_ = 0;
-  String valid_codes_[SCPI_MAX_COMMANDS];
+  void AddToken(char* token);
+  uint32_t GetCommandCode(SCPI_Commands& commands);
+  uint8_t tokens_size_ = 0;
+  char *tokens_[SCPI_MAX_TOKENS];
+  uint8_t codes_size_ = 0;
+  uint32_t valid_codes_[SCPI_MAX_COMMANDS];
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS];
-  String execute_scope_ = "";
-  String tree_code_ = "";
+  uint32_t tree_code_ = 1;
+  char msg_buffer[64]; //TODO BUFFER_LENGTH
 };
 
-#endif
+#endif 

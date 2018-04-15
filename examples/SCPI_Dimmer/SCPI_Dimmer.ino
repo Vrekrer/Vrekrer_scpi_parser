@@ -23,35 +23,27 @@ void setup()
 
 void loop()
 {
-  char line_buffer[256];
-  unsigned char read_length;
-
-  // Read in a line and execute it
-  read_length = Serial.readBytesUntil('\n', line_buffer, 256);
-  if(read_length > 0) {
-    line_buffer[read_length] = '\0'; //Strip the terminator char
-    my_instrument.Execute(String(line_buffer));
-  }
+  my_instrument.ProcessInput(Serial, "\n");
 }
 
-void Identify(SCPI_Commands commands, SCPI_Parameters parameters){
-  Serial.println("Vrekrer,Arduino SCPI Dimmer,#00,v0.2");
+void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  interface.println("Vrekrer,Arduino SCPI Dimmer,#00,v0.3");
 }
 
-void SetBrightness(SCPI_Commands commands, SCPI_Parameters parameters){
+void SetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   // For simplicity no bad parameter check is done.
   if (parameters.Size() > 0) {
-    brightness = constrain(parameters[0].toInt(), 0, 10);
+    brightness = constrain(String(parameters[0]).toInt(), 0, 10);
     analogWrite(ledPin, intensity[brightness]);
   }
 }
 
-void GetBrightness(SCPI_Commands commands, SCPI_Parameters parameters) {
-  Serial.println(String(brightness, DEC));
+void GetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  interface.println(String(brightness, DEC));
 }
 
-void IncDecBrightness(SCPI_Commands commands, SCPI_Parameters parameters){
-  String last_header = commands[commands.Size() - 1];
+void IncDecBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  String last_header = String(commands.Last());
   last_header.toUpperCase();
   if (last_header.startsWith("INC")) {
     brightness = constrain(brightness + 1, 0, 10);

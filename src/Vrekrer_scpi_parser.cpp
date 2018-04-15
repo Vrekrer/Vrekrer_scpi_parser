@@ -3,41 +3,47 @@
 
 // SCPI_String_Array member functions
 
-String SCPI_String_Array::operator[](const byte index) {
+SCPI_String_Array::SCPI_String_Array() {}
+
+SCPI_String_Array::~SCPI_String_Array() {}
+
+char* SCPI_String_Array::operator[](const uint8_t index) {
   return values_[index];
 }
 
-void SCPI_String_Array::Append(String value) {
-  values_[size_] = value;
-  size_++;
+void SCPI_String_Array::Append(char* value) {
+  if (size_ < SCPI_ARRAY_SYZE) {
+    values_[size_] = value;
+    size_++;
+  }
 }
 
-String SCPI_String_Array::Pop() {
+char* SCPI_String_Array::Pop() {
   if (size_ > 0) {
     size_--;
     return values_[size_];
   } else {
-    return String("");
+    return NULL;
   }
 }
 
-String SCPI_String_Array::First() {
+char* SCPI_String_Array::First() {
   if (size_ > 0) {
-    return values_[size_];
+    return values_[0];
   } else {
-    return String("");
+    return NULL;
   }
 }
 
-String SCPI_String_Array::Last() {
+char* SCPI_String_Array::Last() {
   if (size_ > 0) {
-    return values_[size_ -1];
+    return values_[size_ - 1];
   } else {
-    return String("");
+    return NULL;
   }
 }
 
-byte SCPI_String_Array::Size() {
+uint8_t SCPI_String_Array::Size() {
   return size_;
 }
 
@@ -45,26 +51,23 @@ byte SCPI_String_Array::Size() {
 
 SCPI_Commands::SCPI_Commands() {}
 
-SCPI_Commands::SCPI_Commands(String message) {
-  int i;
+SCPI_Commands::SCPI_Commands(char *message) {
+  char* token = message;
+  // Trim leading spaces
+  while (isspace(*token)) token++;
   // Discard parameters and multicommands
-  message.trim();
-  i = message.indexOf(' ');
-  if (i != -1) message.remove(i);
-  i = message.indexOf(';');
-  if (i != -1) message.remove(i);
+  not_processed_message = strpbrk(token, " \t;");
+  if (not_processed_message != NULL) {
+    not_processed_message += 1;
+    token = strtok(token, " \t;");
+    token = strtok(token, ":");
+  } else {
+    token = strtok(token, ":");
+  }
   // Strip using ':'
-  while (true) {
-    i = message.indexOf(':');
-    if (i == 0) { //leading ":"
-      message.remove(0, 1);
-    } else if (i != -1) { 
-      this->Append(message.substring(0, i));
-      message.remove(0, i + 1);
-    } else { //last command
-      this->Append(message);
-      break;
-    }
+  while (token != NULL) {
+    this->Append(token);
+    token = strtok(NULL, ":");
   }
 }
 
@@ -72,160 +75,166 @@ SCPI_Commands::SCPI_Commands(String message) {
 
 SCPI_Parameters::SCPI_Parameters() {}
 
-SCPI_Parameters::SCPI_Parameters(String message) {
-  message.trim();
-  int i = message.indexOf(' ');
-  int j = message.indexOf(';');
-
-  //remove commands before ' ' or ';'
-  if ((j != -1) && (i != -1) && (j < i)) { //';' before ' '
-    message.remove(0, j);
-  } else if (i != -1) {
-    message.remove(0, i + 1);
-  } else if (j != -1) {
-    message.remove(0, j);
-  } else {  // No parameters
-    return;
+SCPI_Parameters::SCPI_Parameters(char* message) {
+  char* parameter = message;
+  // Discard parameters and multicommands
+  not_processed_message = strpbrk(parameter, ";");
+  if (not_processed_message != NULL) {
+    not_processed_message += 1;
+    parameter = strtok(parameter, ";");
+    parameter = strtok(parameter, ",");
+  } else {
+    parameter = strtok(parameter, ",");
   }
-
-  // Strip using  parameter separator ','
-  // if it is multicommand message put next commands in last parameter
-  while (message.length()) {
-    message.trim();
-    //Check for string parameters enclosed by "" or ''
-    if ((message.charAt(0) == '"') || (message.charAt(0) == '\'')) {
-      i = message.indexOf(message.charAt(0), 1);
-      if (i == -1) {  //Bad unterminated string
-        this->Append(message.substring(0, 1));
-        break;
-      } else {  //String found
-        this->Append(message.substring(0, i+1));
-        message.remove(0, i+1);
-      }
-      message.trim();
-      if (message.charAt(0) == ',')  //remove next ',' if any
-        message.remove(0, 1);
-      continue;
-    }
-    //Split on "," or ";"
-    i = message.indexOf(',');
-    j = message.indexOf(';');
-    if ((j == 0) && (message.length() == 1)) {  //just terminator
-      break;
-    } else if (j == 0) {  // This is a new commmand
-      this->Append(message);  //Pass it as last parameter
-      break;
-    } else if ((j != -1) && (i != -1) && (j < i)) {  //';' before ' '
-      this->Append(message.substring(0, j));
-      message.remove(0, j);
-    } else if (i != -1) {  //Normal Parameter
-      this->Append(message.substring(0, i));
-      message.remove(0, i+1);
-    } else if (j != -1) {  //Parameter before new command
-      this->Append(message.substring(0, j));
-      message.remove(0, j);
-    } else {  // Last parameter
-      this->Append(message);
-      break;
-    }
+  // Strip using ':'
+  while (parameter != NULL) {
+    while(isspace(*parameter)) parameter++;
+    this->Append(parameter);
+    parameter = strtok(NULL, ",");
   }
+  //TODO add support for strings parameters
 }
+
 
 //SCPI_Registered_Commands member functions
 
-void SCPI_Parser::AddToken(String token) {
+void SCPI_Parser::AddToken(char *token) {
   //Strip '?' from end if needed
-  if (token.endsWith("?"))
-    token.remove(token.length() -1);
+  size_t original_size = strlen(token);
+  char *mytoken = strtok(token, "?");
   //add the token
   bool allready_added = false;
-  for (int i = 0; i < tokens_size_; i++)
-    allready_added ^= token.equals(tokens_[i]);
+  for (uint8_t i = 0; i < tokens_size_; i++)
+    allready_added ^= (strcmp(mytoken, tokens_[i]) == 0);
   if (!allready_added) {
-    tokens_[tokens_size_] = token;
-    tokens_size_++;
+    if (tokens_size_ < SCPI_MAX_TOKENS) {
+      char *stored_token = new char [strlen(mytoken) + 1];
+      strcpy(stored_token, mytoken);
+      tokens_[tokens_size_] = stored_token;
+      tokens_size_++;
+    }
   }
+  //Restore ? if needed
+  if (original_size > strlen(token)) token[original_size-1] = '?';
 }
 
-String SCPI_Parser::GetCommandCode(SCPI_Commands commands) {
-  char code[10]; //TODO Max Command nesting?
+uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
+  uint32_t code = tree_code_ - 1;
+  char* header;
   for (int i = 0; i < commands.Size(); i++) {
-    code[i] = char(33);  //Default value ch(33) =!
-    String header = commands[i];
-    header.toUpperCase();
-    byte offset = 65;  //ch(65) = A
-    if (header.endsWith("?")) {
-      byte offset = 97;  //ch(65) = a
-      header.remove(header.length(), 1);
+    code *= SCPI_MAX_TOKENS;
+    header = commands[i];
+    bool isToken;
+    for (uint8_t j = 0; j < tokens_size_; j++) {
+      size_t ss = 0; //Token Short size
+      while (isupper(tokens_[j][ss])) ss++;
+      size_t ls = strlen(tokens_[j]); //Token Long size
+      size_t hs = strlen(header); //Header size
+
+      isToken = true;
+      if ((hs == ss) | (hs == ss+1)) { //short token
+        for (uint8_t k  = 0; k < ss; k++)
+          isToken &= (toupper(header[k]) == tokens_[j][k]);
+      } else if ((hs == ls) | (hs == ls+1)) { //long token
+        for (uint8_t k  = 0; k < ls; k++)
+          isToken &= (toupper(header[k]) == toupper(tokens_[j][k]));
+      } else {
+        isToken = false;
+      }
+      if (isToken) {
+        code += j;
+        break;
+      }
     }
-    for (int j = 0; j < tokens_size_; j++) {
-      String short_token = tokens_[j];
-      for (int t = 0; t < short_token.length(); t++)
-        if (isLowerCase(short_token.charAt(t))) {
-          short_token.remove(t);
-          break;
-        }
-      String long_token = tokens_[j];
-      long_token.toUpperCase();
-      if (header.equals(short_token) || header.equals(long_token))
-        code[i] = char(offset + j);
-    }
+    if (!isToken) return 0;
   }
-  code[commands.Size()] = '\0';
-  return String(code);
+  if (header[strlen(header) - 1] == '?') code ^= 0x80000000;
+  return code+1;
 }
 
-void SCPI_Parser::SetCommandTreeBase(String tree_base) {
+void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   SCPI_Commands tree_tokens(tree_base);
-  for (int i = 0; i < tree_tokens.Size(); i++)
+  for (uint8_t i = 0; i < tree_tokens.Size(); i++)
     this->AddToken(tree_tokens[i]);
+  tree_code_ = 1;
   tree_code_ = this->GetCommandCode(tree_tokens);
 }
 
-void SCPI_Parser::RegisterCommand(String command, SCPI_caller_t caller) {
+void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
-  for (int i = 0; i < command_tokens.Size(); i++)
+  for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken(command_tokens[i]);
-  String code = this->GetCommandCode(command_tokens);
-  valid_codes_[codes_size_] = tree_code_ + code;
+  uint32_t code = this->GetCommandCode(command_tokens);
+  valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
 }
 
-String SCPI_Parser::Execute_(String message) {
+void SCPI_Parser::Execute(char* message, Stream &interface) {
+  tree_code_ = 1;
   SCPI_Commands commands(message);
-  SCPI_Parameters parameters(message);
-  
-  String not_processed_message = "";
-  if (parameters.Last().startsWith(";")) { //It is a command not a param
-    not_processed_message = parameters.Pop();
-    not_processed_message.remove(0, 1);
-  }
-
-  String code = this->GetCommandCode(commands);
-  String full_code = execute_scope_ + code;
-  int i;
-  for (i = 0; i < codes_size_; i++)
-    if (valid_codes_[i].equals(code)) {
-      code.remove(code.length() - 1);
-      execute_scope_ = code;
-      break;
-    } else if (valid_codes_[i].equals(full_code)) {
-      full_code.remove(full_code.length() - 1);
-      execute_scope_ = full_code;
-      break;
-    }
-  if (callers_[i] && (i < codes_size_)) {
-    (*callers_[i])(commands, parameters);
-  } else {
-    execute_scope_ = String("");
-  }
-  return not_processed_message;
+  SCPI_Parameters parameters(commands.not_processed_message);
+  uint32_t code = this->GetCommandCode(commands);
+  for (uint8_t i = 0; i < codes_size_; i++)
+    if (valid_codes_[i] == code)
+      (*callers_[i])(commands, parameters, interface);
 }
 
-void SCPI_Parser::Execute(String message) {
-  execute_scope_ = String("");
-  while (message.length()) {
-    message = this->Execute_(message);
+char* SCPI_Parser::GetMessage(Stream& interface, char* term_chars) {
+  uint8_t msg_counter = 0;
+  msg_buffer[msg_counter] = '\0';
+
+  bool continous_data = true;
+  unsigned long last_data_millis = millis();
+  while (continous_data) {
+    if (interface.available()) {
+        last_data_millis = millis();
+        msg_buffer[msg_counter] =  interface.read();
+
+        //TODO check msg_counter overflow
+        ++msg_counter;
+        msg_buffer[msg_counter] = '\0';
+
+        if (strstr(msg_buffer, term_chars) != NULL) {
+          msg_buffer[msg_counter - strlen(term_chars)] =  '\0';
+          break;
+        }
+    } else { //No chars aviable jet
+      if ((millis() - last_data_millis) > 10) // 10 ms without new data
+        continous_data = false;
+    }
   }
+  if (continous_data)
+    return msg_buffer;
+  else
+    return NULL;
+}
+
+void SCPI_Parser::ProcessInput(Stream& interface, char* term_chars) {
+  char* message = this->GetMessage(interface, term_chars);
+  if (message != NULL) {
+    this->Execute(message, interface);
+  }
+}
+
+void SCPI_Parser::PrintDebugInfo() {
+  Serial.println(F("*** DEBUG INFO ***"));
+  Serial.println();
+  Serial.print(F("TOKENS :"));
+  Serial.println(tokens_size_);
+  for (uint8_t i = 0; i < tokens_size_; i++) {
+    Serial.print(F("  "));
+    Serial.println(String(tokens_[i]));
+    Serial.flush();
+  }
+  Serial.println();
+  Serial.println(F("VALID CODES :"));
+  for (uint8_t i = 0; i < codes_size_; i++) {
+    Serial.print(F("  "));
+    Serial.println(valid_codes_[i]);
+    Serial.flush();
+  }
+  Serial.println();
+  Serial.println(F("*******************"));
+  Serial.println();
 }
