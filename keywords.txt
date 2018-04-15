@@ -6,14 +6,14 @@
 # Datatypes (KEYWORD1)
 ###############################################
 
-SCPI_Commands       KEYWORD1    SCPI_Commands
-SCPI_Parameters     KEYWORD1    SCPI_Parameters
-SCPI_Parser         KEYWORD1    SCPI_Parser
+SCPI_Commands	KEYWORD1	SCPI_Commands
+SCPI_Parameters	KEYWORD1	SCPI_Parameters
+SCPI_Parser	KEYWORD1	SCPI_Parser
 
 ###############################################
 # Methods and Functions (KEYWORD2)
 ###############################################
 
-RegisterCommand     KEYWORD2
-Execute             KEYWORD2
-SetCommandTreeBase  KEYWORD2
+RegisterCommand	KEYWORD2
+Execute	KEYWORD2
+SetCommandTreeBase	KEYWORD2
