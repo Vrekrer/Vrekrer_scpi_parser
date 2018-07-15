@@ -6,9 +6,9 @@
 # Datatypes (KEYWORD1)
 ###############################################
 
-SCPI_Commands	KEYWORD1	SCPI_Commands
-SCPI_Parameters	KEYWORD1	SCPI_Parameters
-SCPI_Parser	KEYWORD1	SCPI_Parser
+SCPI_Commands	KEYWORD1
+SCPI_Parameters	KEYWORD1
+SCPI_Parser	KEYWORD1
 
 ###############################################
 # Methods and Functions (KEYWORD2)
