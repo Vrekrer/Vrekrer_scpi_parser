@@ -114,7 +114,7 @@ void SCPI_Parser::AddToken(char *token) {
       tokens_size_++;
     }
   }
-  //Restore ? if needed
+  //Restore ? if needed (for SCPI_Parser::GetCommandCode processing)
   if (original_size > strlen(token)) token[original_size-1] = '?';
 }
 
@@ -152,7 +152,12 @@ uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
   return code+1;
 }
 
-void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
+void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
+  strcpy_P(msg_buffer, (const char *) tree_base);
+  this->SetCommandTreeBase(msg_buffer);
+}
+
+void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
   SCPI_Commands tree_tokens(tree_base);
   for (uint8_t i = 0; i < tree_tokens.Size(); i++)
     this->AddToken(tree_tokens[i]);
@@ -160,7 +165,12 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   tree_code_ = this->GetCommandCode(tree_tokens);
 }
 
-void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
+void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller) {
+  strcpy_P(msg_buffer, (const char *) command);
+  this->RegisterCommand(msg_buffer, caller);
+}
+
+void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken(command_tokens[i]);
