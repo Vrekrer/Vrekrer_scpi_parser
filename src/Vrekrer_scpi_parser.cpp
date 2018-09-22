@@ -158,11 +158,15 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 }
 
 void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
-  SCPI_Commands tree_tokens(tree_base);
-  for (uint8_t i = 0; i < tree_tokens.Size(); i++)
-    this->AddToken(tree_tokens[i]);
-  tree_code_ = 1;
-  tree_code_ = this->GetCommandCode(tree_tokens);
+  if (strlen(tree_base) > 0) {
+    SCPI_Commands tree_tokens(tree_base);
+    for (uint8_t i = 0; i < tree_tokens.Size(); i++)
+      this->AddToken(tree_tokens[i]);
+    tree_code_ = 1;
+    tree_code_ = this->GetCommandCode(tree_tokens);
+  } else {
+    tree_code_ = 1;
+  }
 }
 
 void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller) {
