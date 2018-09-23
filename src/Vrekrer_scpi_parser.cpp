@@ -198,10 +198,11 @@ char* SCPI_Parser::GetMessage(Stream& interface, char* term_chars) {
   uint8_t msg_counter = 0;
   msg_buffer[msg_counter] = '\0';
 
-  bool continous_data = true;
+  bool continous_data = false;
   unsigned long last_data_millis = millis();
-  while (continous_data) {
+  do {
     if (interface.available()) {
+        continous_data = true;
         last_data_millis = millis();
         msg_buffer[msg_counter] =  interface.read();
 
@@ -217,7 +218,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, char* term_chars) {
       if ((millis() - last_data_millis) > 10) // 10 ms without new data
         continous_data = false;
     }
-  }
+  } while (continous_data);
   if (continous_data)
     return msg_buffer;
   else
