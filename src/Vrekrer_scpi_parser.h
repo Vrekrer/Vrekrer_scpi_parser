@@ -60,6 +60,7 @@ class SCPI_Parser {
   void ProcessInput(Stream &interface, char* term_chars);
   char* GetMessage(Stream& interface, char* term_chars);
   void PrintDebugInfo();
+  void PrintCommands(Stream& interface);
  protected:
   void AddToken(char* token);
   uint32_t GetCommandCode(SCPI_Commands& commands);

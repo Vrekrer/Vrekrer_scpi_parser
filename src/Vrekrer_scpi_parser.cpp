@@ -132,10 +132,10 @@ uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
       size_t hs = strlen(header); //Header size
 
       isToken = true;
-      if ((hs == ss) | (hs == ss+1)) { //short token
+      if ((hs == ss) | ((hs == ss+1) & header[hs-1] == '?')) { //short token
         for (uint8_t k  = 0; k < ss; k++)
           isToken &= (toupper(header[k]) == tokens_[j][k]);
-      } else if ((hs == ls) | (hs == ls+1)) { //long token
+      } else if ((hs == ls) | ((hs == ls+1) & header[hs-1] == '?')) { //long token
         for (uint8_t k  = 0; k < ls; k++)
           isToken &= (toupper(header[k]) == toupper(tokens_[j][k]));
       } else {
@@ -252,4 +252,30 @@ void SCPI_Parser::PrintDebugInfo() {
   Serial.println();
   Serial.println(F("*******************"));
   Serial.println();
+}
+
+void SCPI_Parser::PrintCommands(Stream& interface) {
+  interface.println(F("Commands are:"));
+  for (uint8_t i = 0; i < codes_size_; i++) {
+    interface.print("  ");
+    uint32_t parent_id = ((valid_codes_[i] & 0x7fffffff) - 1)/SCPI_MAX_TOKENS;
+    if (parent_id > 0) {
+      // Somewhat confusing method to "reverse traverse" the token tree.
+      int8_t tree_depth = log(parent_id)/log(SCPI_MAX_TOKENS);
+      // Integer power calculation, as floating point error in pow() breaks things
+      uint32_t divisor = 1;
+      for (uint8_t t = 0 ; t < tree_depth; t++) divisor *= SCPI_MAX_TOKENS;
+      // Now loop through from the bottom of the tree and work upwards
+      for ( ; tree_depth >= 0; tree_depth--) {
+        interface.print(String(tokens_[uint8_t(parent_id/divisor)]) + ":");
+        parent_id %= divisor;
+        divisor /= SCPI_MAX_TOKENS;
+      }
+    }
+    // Append the final node
+    uint8_t token_id = (uint8_t)(((valid_codes_[i] & 0x7fffffff) - 1)%SCPI_MAX_TOKENS);
+    bool is_query = bool(valid_codes_[i] & 0x80000000);
+    interface.println(String(tokens_[token_id]) + (is_query ? "?" : ""));
+  }
+  interface.flush();
 }
