@@ -1,19 +1,19 @@
 #ifndef SCPI_parser_h
 #define SCPI_parser_h
 
-// Maximun size of commnad tree and number of parameters
+// Maximum size of command tree and number of parameters
 #ifndef SCPI_ARRAY_SYZE
 #define SCPI_ARRAY_SYZE 6
-#endif 
+#endif
 
 #ifndef SCPI_MAX_TOKENS
 #define SCPI_MAX_TOKENS 15
-#endif 
+#endif
 
-// Maximun number of registered commands 
+// Maximum number of registered commands
 #ifndef SCPI_MAX_COMMANDS
 #define SCPI_MAX_COMMANDS 20
-#endif 
+#endif
 
 #include "Arduino.h";
 
@@ -73,4 +73,4 @@ class SCPI_Parser {
   char msg_buffer[64]; //TODO BUFFER_LENGTH
 };
 
-#endif 
+#endif

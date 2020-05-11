@@ -99,23 +99,29 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
 //SCPI_Registered_Commands member functions
 
 void SCPI_Parser::AddToken(char *token) {
-  //Strip '?' from end if needed
-  size_t original_size = strlen(token);
-  char *mytoken = strtok(token, "?");
+  // Strip '?' or numeric suffix from end if needed
+  char *token_suffix = strpbrk(token, "1234567890?");
+  char suffix_char = '\0';
+  if (token_suffix != NULL) {
+    // Suffix present. Insert terminator bvte, but remember character replaced
+    suffix_char = token_suffix[0];
+    token_suffix[0] = '\0';
+  }
   //add the token
+  // TODO Match long or short versions of tokens
   bool allready_added = false;
   for (uint8_t i = 0; i < tokens_size_; i++)
-    allready_added ^= (strcmp(mytoken, tokens_[i]) == 0);
+    allready_added ^= (strcmp(token, tokens_[i]) == 0);
   if (!allready_added) {
     if (tokens_size_ < SCPI_MAX_TOKENS) {
-      char *stored_token = new char [strlen(mytoken) + 1];
-      strcpy(stored_token, mytoken);
+      char *stored_token = new char [strlen(token) + 1];
+      strcpy(stored_token, token);
       tokens_[tokens_size_] = stored_token;
       tokens_size_++;
     }
   }
-  //Restore ? if needed (for SCPI_Parser::GetCommandCode processing)
-  if (original_size > strlen(token)) token[original_size-1] = '?';
+  // Restore suffix char if token was modified
+  if (token_suffix != token) token_suffix[0] = suffix_char;
 }
 
 uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
@@ -130,12 +136,15 @@ uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
       while (isupper(tokens_[j][ss])) ss++;
       size_t ls = strlen(tokens_[j]); //Token Long size
       size_t hs = strlen(header); //Header size
+      // But ignore any suffix in header string length
+      char *header_suffix = strpbrk(header, "1234567890?");
+      if (header_suffix != NULL) hs -= strlen(header_suffix);
 
       isToken = true;
-      if ((hs == ss) | ((hs == ss+1) & header[hs-1] == '?')) { //short token
+      if (hs == ss && ss > 0) { //short token
         for (uint8_t k  = 0; k < ss; k++)
           isToken &= (toupper(header[k]) == tokens_[j][k]);
-      } else if ((hs == ls) | ((hs == ls+1) & header[hs-1] == '?')) { //long token
+      } else if (hs == ls) { //long token
         for (uint8_t k  = 0; k < ls; k++)
           isToken &= (toupper(header[k]) == toupper(tokens_[j][k]));
       } else {
@@ -163,7 +172,8 @@ void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
     for (uint8_t i = 0; i < tree_tokens.Size(); i++)
       this->AddToken(tree_tokens[i]);
     tree_code_ = 1;
-    tree_code_ = this->GetCommandCode(tree_tokens);
+    // Don't allow tree code to be a query, or else it inverts query flag on all subsequent commands
+    tree_code_ = this->GetCommandCode(tree_tokens) & 0x7fffffff;
   } else {
     tree_code_ = 1;
   }
@@ -179,6 +189,12 @@ void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken(command_tokens[i]);
   uint32_t code = this->GetCommandCode(command_tokens);
+  for (uint8_t i = 0; i < codes_size_; i++) {
+    if (code == valid_codes_[i]) {
+      // Command code is a duplicate, don't add it
+      return;
+    }
+  }
   valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
@@ -246,13 +262,14 @@ void SCPI_Parser::PrintDebugInfo() {
   Serial.println(F("VALID CODES :"));
   for (uint8_t i = 0; i < codes_size_; i++) {
     Serial.print(F("  "));
-    Serial.println(valid_codes_[i]);
+    Serial.println(String(valid_codes_[i]) + " = " + String(valid_codes_[i] & 0x7fffffff) + String(valid_codes_[i] & 0x80000000 ? " ?" : ""));
     Serial.flush();
   }
   Serial.println();
   Serial.println(F("*******************"));
   Serial.println();
 }
+
 
 void SCPI_Parser::PrintCommands(Stream& interface) {
   interface.println(F("Commands are:"));
