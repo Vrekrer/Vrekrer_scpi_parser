@@ -15,7 +15,7 @@
 #define SCPI_MAX_COMMANDS 20
 #endif 
 
-#include "Arduino.h";
+#include "Arduino.h"
 
 class SCPI_String_Array {
  public:

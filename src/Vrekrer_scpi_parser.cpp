@@ -1,5 +1,5 @@
-#include "Vrekrer_scpi_parser.h";
-#include "Arduino.h";
+#include "Vrekrer_scpi_parser.h"
+#include "Arduino.h"
 
 // SCPI_String_Array member functions
 
