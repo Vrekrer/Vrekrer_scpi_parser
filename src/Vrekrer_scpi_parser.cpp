@@ -99,45 +99,48 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
 //SCPI_Registered_Commands member functions
 
 void SCPI_Parser::AddToken(char *token) {
-  //Strip '?' from end if needed
-  size_t original_size = strlen(token);
-  char *mytoken = strtok(token, "?");
-  //add the token
+  size_t token_size = strlen(token);
+  bool isQuery = (token[token_size - 1] == '?');
+  if (isQuery) token_size--;
+
   bool allready_added = false;
   for (uint8_t i = 0; i < tokens_size_; i++)
-    allready_added ^= (strcmp(mytoken, tokens_[i]) == 0);
+    allready_added ^= (strncmp(token, tokens_[i], token_size) == 0);
   if (!allready_added) {
     if (tokens_size_ < SCPI_MAX_TOKENS) {
-      char *stored_token = new char [strlen(mytoken) + 1];
-      strcpy(stored_token, mytoken);
+      char *stored_token = new char [token_size + 1];
+      strncpy(stored_token, token, token_size);
+      stored_token[token_size] = '\0';
       tokens_[tokens_size_] = stored_token;
       tokens_size_++;
     }
   }
-  //Restore ? if needed (for SCPI_Parser::GetCommandCode processing)
-  if (original_size > strlen(token)) token[original_size-1] = '?';
 }
 
 uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
-  uint32_t code = tree_code_ - 1;
-  char* header;
-  for (int i = 0; i < commands.Size(); i++) {
+  uint32_t code = tree_code_ - 1;  // tree_code = 1 when execute
+  bool isQuery = false;
+  for (uint8_t i = 0; i < commands.Size(); i++) {
     code *= SCPI_MAX_TOKENS;
-    header = commands[i];
+    size_t header_length = strlen(commands[i]);  //header's length
+    if (i == commands.Size() - 1) { //Last header
+      isQuery = (commands[i][header_length - 1] == '?');
+      if (isQuery) header_length--;
+    }
+    
     bool isToken;
     for (uint8_t j = 0; j < tokens_size_; j++) {
-      size_t ss = 0; //Token Short size
-      while (isupper(tokens_[j][ss])) ss++;
-      size_t ls = strlen(tokens_[j]); //Token Long size
-      size_t hs = strlen(header); //Header size
+      size_t short_length = 0; //short token's length
+      while (isupper(tokens_[j][short_length])) short_length++;
+      size_t long_length = strlen(tokens_[j]); //long token's length
 
       isToken = true;
-      if ((hs == ss) | (hs == ss+1)) { //short token
-        for (uint8_t k  = 0; k < ss; k++)
-          isToken &= (toupper(header[k]) == tokens_[j][k]);
-      } else if ((hs == ls) | (hs == ls+1)) { //long token
-        for (uint8_t k  = 0; k < ls; k++)
-          isToken &= (toupper(header[k]) == toupper(tokens_[j][k]));
+      if (header_length == short_length) { //match with short token
+        for (uint8_t k  = 0; k < short_length; k++)
+          isToken &= (toupper(commands[i][k]) == tokens_[j][k]);
+      } else if (header_length == long_length) { //match with long token
+        for (uint8_t k  = 0; k < long_length; k++)
+          isToken &= (toupper(commands[i][k]) == toupper(tokens_[j][k]));
       } else {
         isToken = false;
       }
@@ -148,7 +151,7 @@ uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
     }
     if (!isToken) return 0;
   }
-  if (header[strlen(header) - 1] == '?') code ^= 0x80000000;
+  if (isQuery) code ^= 0x80000000;
   return code+1;
 }
 
