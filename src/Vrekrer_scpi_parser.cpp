@@ -118,7 +118,7 @@ void SCPI_Parser::AddToken(char *token) {
 }
 
 uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
-  uint32_t code = tree_code_ - 1;  // tree_code = 1 when execute
+  uint32_t code = tree_code_ - 1; // tree_code = 1 when execute
   bool isQuery = false;
   for (uint8_t i = 0; i < commands.Size(); i++) {
     code *= SCPI_MAX_TOKENS;
@@ -133,6 +133,12 @@ uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
       size_t short_length = 0; //short token's length
       while (isupper(tokens_[j][short_length])) short_length++;
       size_t long_length = strlen(tokens_[j]); //long token's length
+
+      if ( (tokens_[j][long_length - 1] == '#') //Numeric suffix capable token
+         && (commands[i][header_length - 1] != '#') ) {
+        long_length--;
+        while (isdigit(commands[i][header_length - 1])) header_length--;
+      }
 
       isToken = true;
       if (header_length == short_length) { //match with short token
