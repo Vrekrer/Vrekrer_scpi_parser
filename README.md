@@ -1,5 +1,5 @@
 # Vrekrer scpi parser
-A simple SCPI parser for small Arduino projects.
+A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments) parser for small Arduino projects.
 
 ## Features
 - Small memory footprint, implemented for reduced RAM usage.
