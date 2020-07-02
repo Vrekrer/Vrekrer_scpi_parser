@@ -38,7 +38,7 @@ const int intensity[11] = {0, 3, 5, 9, 15, 24, 38, 62, 99, 159, 255};
 void setup()
 {
   my_instrument.RegisterCommand(F("*IDN?"), &Identify);
-  my_instrument.SetCommandTreeBase(F("SYSTem:LED");
+  my_instrument.SetCommandTreeBase(F("SYSTem:LED"));
     my_instrument.RegisterCommand(F(":BRIGhtness"), &SetBrightness);
     my_instrument.RegisterCommand(F(":BRIGhtness?"), &GetBrightness);
     my_instrument.RegisterCommand(F(":BRIGhtness:INCrease"), &IncDecBrightness);
