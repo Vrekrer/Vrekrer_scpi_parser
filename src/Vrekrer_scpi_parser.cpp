@@ -3,14 +3,24 @@
 
 // SCPI_String_Array member functions
 
+/**
+ * SCPI String Array Constructor
+ */
 SCPI_String_Array::SCPI_String_Array() {}
 
+/** SCPI String Array Destructor  */
 SCPI_String_Array::~SCPI_String_Array() {}
 
+/** I have no idea what this does, or what operator[] means, or what the arguments do
+ * @param index: Some argument I don't understand
+ */
 char* SCPI_String_Array::operator[](const uint8_t index) {
   return values_[index];
 }
 
+/** Append a single character to the string array (can this append an array of characters? I don't know
+ * @param value: pointer to the character to be appended
+ */
 void SCPI_String_Array::Append(char* value) {
   if (size_ < SCPI_ARRAY_SYZE) {
     values_[size_] = value;
@@ -18,6 +28,9 @@ void SCPI_String_Array::Append(char* value) {
   }
 }
 
+/** Pop the most recently-added string array (?) 
+ * @returns pointer to the string array. NULL if there are no strings to pop.
+ */
 char* SCPI_String_Array::Pop() {
   if (size_ > 0) {
     size_--;
@@ -27,6 +40,9 @@ char* SCPI_String_Array::Pop() {
   }
 }
 
+/** Get the first character array to be added to the stack
+ *  @returns Pointer to the character array. NULL if no such value.
+ */
 char* SCPI_String_Array::First() {
   if (size_ > 0) {
     return values_[0];
@@ -35,6 +51,9 @@ char* SCPI_String_Array::First() {
   }
 }
 
+/** Get the last (most recent) character array to be added to the  stack
+ * @returns Pointer to the last-added character array
+ */
 char* SCPI_String_Array::Last() {
   if (size_ > 0) {
     return values_[size_ - 1];
@@ -43,15 +62,19 @@ char* SCPI_String_Array::Last() {
   }
 }
 
+/** @returns Number of strings that have been added to the string stack */
 uint8_t SCPI_String_Array::Size() {
   return size_;
 }
 
 // SCPI_Commands member functions
 
+/** Constructor for SCPI Commands class */
 SCPI_Commands::SCPI_Commands() {}
 
-SCPI_Commands::SCPI_Commands(char *message) {
+/** Constructor for SCPI Commands class
+ * @param message: Input message sent to the Arduino device from an external source (i.e. a PC) */
+SCPI_Commands::SCPI_Commands(char* message) {
   char* token = message;
   // Trim leading spaces
   while (isspace(*token)) token++;
@@ -72,9 +95,13 @@ SCPI_Commands::SCPI_Commands(char *message) {
 }
 
 // SCPI_Parameters member functions
-
+/** SCPI Parameters constructor. */
 SCPI_Parameters::SCPI_Parameters() {}
 
+/** SCPI Parameters constructor.
+ * Takes an input message and parses the parameters, assuming they come before a semicolon (?)
+ * @param message: Input SCPI message from the host device (i.e. PC)
+ */
 SCPI_Parameters::SCPI_Parameters(char* message) {
   char* parameter = message;
   // Discard parameters and multicommands
@@ -92,15 +119,17 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
     this->Append(parameter);
     parameter = strtok(NULL, ",");
   }
-  //TODO add support for strings parameters
+  //TODO add support for strings parameters. Please elaborate on this TODO.
 }
 
 
-//SCPI_Registered_Commands member functions
+//SCPI_Registered_Commands member functions. Why is there no constructor for the SCPI parser?
 
+/** Adds a token. What exactly is a token?
+ */
 void SCPI_Parser::AddToken(char *token) {
   size_t token_size = strlen(token);
-  bool isQuery = (token[token_size - 1] == '?');
+  bool isQuery = (token[token_size - 1] == '?'); 
   if (isQuery) token_size--;
 
   bool allready_added = false;
