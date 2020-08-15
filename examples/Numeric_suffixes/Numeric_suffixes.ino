@@ -49,7 +49,7 @@ const int DIn[6] = {8, 9, 10, 11, 12, 13};
 //Digital output pins
 const int DOut[6] = {2, 3, 4, 5, 6, 7};
 
-SCPI_Parser my_instrument;
+SCPI_Parametersarser my_instrument;
 
 void setup()
 {
@@ -75,13 +75,13 @@ void loop()
   my_instrument.ProcessInput(Serial, "\n");
 }
 
-void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void Identify(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   //*IDN?
   // Returns the instrument's identification string
   interface.println(F("Vrekrer,Arduino Numeric suffixes example,#00,v0.4"));
 }
 
-void QueryDigital_Input(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void QueryDigital_Input(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   //DIn<index>?
   //Queries the logic state of DIn[index] pin
   //Return values are "HIGH" or "LOW"
@@ -105,7 +105,7 @@ void QueryDigital_Input(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   }
 }
 
-void QueryDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void QueryDigital_Output(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   //DOut<index>?
   //Queries the logic state of DOut[index] pin
   //Return values are "HIGH" or "LOW"
@@ -129,7 +129,7 @@ void QueryDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) 
   }
 }
 
-void WriteDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void WriteDigital_Output(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   //DOut<index> state
   //Sets the logic state of DOut[index] pin
   //Valid states are : "HIGH", "LOW", "ON", "OFF", "1" and "0"

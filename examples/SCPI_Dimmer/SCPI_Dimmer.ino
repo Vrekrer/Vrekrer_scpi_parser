@@ -30,7 +30,7 @@ Commands:
 #include "Arduino.h"
 #include "Vrekrer_scpi_parser.h"
 
-SCPI_Parser my_instrument;
+SCPI_Parametersarser my_instrument;
 int brightness = 0;
 const int ledPin = 9;
 const int intensity[11] = {0, 3, 5, 9, 15, 24, 38, 62, 99, 159, 255};
@@ -55,11 +55,11 @@ void loop()
   my_instrument.ProcessInput(Serial, "\n");
 }
 
-void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void Identify(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   interface.println(F("Vrekrer,Arduino SCPI Dimmer,#00,v0.4"));
 }
 
-void SetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void SetBrightness(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   // For simplicity no bad parameter check is done.
   if (parameters.Size() > 0) {
     brightness = constrain(String(parameters[0]).toInt(), 0, 10);
@@ -67,11 +67,11 @@ void SetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   }
 }
 
-void GetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void GetBrightness(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   interface.println(String(brightness, DEC));
 }
 
-void IncDecBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void IncDecBrightness(SCPI_Commands commands, SCPI_Parameters parameters, Stream& interface) {
   String last_header = String(commands.Last());
   last_header.toUpperCase();
   if (last_header.startsWith("INC")) {

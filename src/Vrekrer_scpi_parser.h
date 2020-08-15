@@ -46,8 +46,6 @@ class SCPI_Parameters : public SCPI_String_Array {
   char* not_processed_message;
 };
 
-typedef SCPI_Commands SCPI_C;
-typedef SCPI_Parameters SCPI_P;
 typedef void (*SCPI_caller_t)(SCPI_C, SCPI_P, Stream&);
 
 class SCPI_Parser {

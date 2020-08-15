@@ -13,7 +13,7 @@ byte Ethernet::buffer[128];
 
 const byte csPin = 2; //ChipSelect Pin
 
-SCPI_Parser my_instrument;
+SCPI_Parametersarser my_instrument;
 boolean fromSerial = true;
 
 void setup() {
@@ -67,32 +67,32 @@ void loop() {
 
 /* SCPI FUNCTIONS */
 
-void Identify(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void Identify(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   char IDN[] = "Vrekrer,SCPI Ethernet Instrument,#00,v0.3\n";
   PrintToInterface(IDN);
 }
 
-void SetIP(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void SetIP(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   SaveIP(parameters.First(), eeprom_eth_data_start + 7 );
 }
 
-void GetIP(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void GetIP(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   char ip_str[16];
   IpToString(ether.myip, ip_str);
   PrintToInterface( ip_str );
 }
 
-void SetGW(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void SetGW(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   SaveIP(parameters.First(), eeprom_eth_data_start + 11 );
 }
 
-void GetGW(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void GetGW(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   char ip_str[16];
   IpToString(ether.gwip, ip_str);
   PrintToInterface( ip_str );
 }
 
-void SetMAC(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void SetMAC(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   int this_mac[6];
   int mac_ok = 0;
   if (parameters.Size() == 6) {
@@ -109,7 +109,7 @@ void SetMAC(SCPI_C commands, SCPI_P parameters, Stream &interface) {
   }
 }
 
-void GetMAC(SCPI_C commands, SCPI_P parameters, Stream &interface) {
+void GetMAC(SCPI_Commands commands, SCPI_Parameters parameters, Stream &interface) {
   char mac_str[ ] = "0x##, 0x##, 0x##, 0x##, 0x##, 0x##\n";
   for (int i = 0; i < 6; ++i) {
     char u = ether.mymac[i] / 16;
