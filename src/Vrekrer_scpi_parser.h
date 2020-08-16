@@ -48,17 +48,19 @@ class SCPI_Parameters : public SCPI_String_Array {
 
 typedef SCPI_Commands SCPI_C;
 typedef SCPI_Parameters SCPI_P;
-typedef void (*SCPI_caller_t)(SCPI_C, SCPI_P, Stream&);
+typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
 
 class SCPI_Parser {
  public:
+  void SetCommandTreeBase(char* tree_base);
   void SetCommandTreeBase(const char* tree_base);
   void SetCommandTreeBase(const __FlashStringHelper* tree_base);
+  void RegisterCommand(char* command, SCPI_caller_t caller);
   void RegisterCommand(const char* command, SCPI_caller_t caller);
   void RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller);
   void Execute(char* message, Stream& interface);
-  void ProcessInput(Stream &interface, char* term_chars);
-  char* GetMessage(Stream& interface, char* term_chars);
+  void ProcessInput(Stream &interface, const char* term_chars);
+  char* GetMessage(Stream& interface, const char* term_chars);
   void PrintDebugInfo();
  protected:
   void AddToken(char* token);

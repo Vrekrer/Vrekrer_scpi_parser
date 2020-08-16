@@ -56,9 +56,9 @@ SCPI_Commands::SCPI_Commands(char *message) {
   // Trim leading spaces
   while (isspace(*token)) token++;
   // Discard parameters and multicommands
-  not_processed_message = strpbrk(token, " \t;");
-  if (not_processed_message != NULL) {
-    not_processed_message += 1;
+  this->not_processed_message = strpbrk(token, " \t;");
+  if (this->not_processed_message != NULL) {
+    this->not_processed_message += 1;
     token = strtok(token, " \t;");
     token = strtok(token, ":");
   } else {
@@ -78,9 +78,9 @@ SCPI_Parameters::SCPI_Parameters() {}
 SCPI_Parameters::SCPI_Parameters(char* message) {
   char* parameter = message;
   // Discard parameters and multicommands
-  not_processed_message = strpbrk(parameter, ";");
-  if (not_processed_message != NULL) {
-    not_processed_message += 1;
+  this->not_processed_message = strpbrk(parameter, ";");
+  if (this->not_processed_message != NULL) {
+    this->not_processed_message += 1;
     parameter = strtok(parameter, ";");
     parameter = strtok(parameter, ",");
   } else {
@@ -167,6 +167,11 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 }
 
 void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
+  strcpy(msg_buffer, tree_base);
+  this->SetCommandTreeBase(msg_buffer);
+}
+
+void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   if (strlen(tree_base) > 0) {
     SCPI_Commands tree_tokens(tree_base);
     for (uint8_t i = 0; i < tree_tokens.Size(); i++)
@@ -184,6 +189,11 @@ void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_calle
 }
 
 void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
+  strcpy(msg_buffer, command);
+  this->RegisterCommand(msg_buffer, caller);
+}
+
+void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken(command_tokens[i]);
@@ -203,7 +213,7 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
       (*callers_[i])(commands, parameters, interface);
 }
 
-char* SCPI_Parser::GetMessage(Stream& interface, char* term_chars) {
+char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
   uint8_t msg_counter = 0;
   msg_buffer[msg_counter] = '\0';
 
@@ -234,7 +244,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, char* term_chars) {
     return NULL;
 }
 
-void SCPI_Parser::ProcessInput(Stream& interface, char* term_chars) {
+void SCPI_Parser::ProcessInput(Stream& interface, const char* term_chars) {
   char* message = this->GetMessage(interface, term_chars);
   if (message != NULL) {
     this->Execute(message, interface);
