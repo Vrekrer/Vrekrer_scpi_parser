@@ -15,6 +15,11 @@
 #define SCPI_MAX_COMMANDS 20
 #endif 
 
+// Length of the message buffer
+#ifndef SCPI_BUFFER_LENGTH
+#define SCPI_BUFFER_LENGTH 64
+#endif 
+
 #include "Arduino.h"
 
 class SCPI_String_Array {
@@ -71,7 +76,7 @@ class SCPI_Parser {
   uint32_t valid_codes_[SCPI_MAX_COMMANDS];
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS];
   uint32_t tree_code_ = 1;
-  char msg_buffer[64]; //TODO BUFFER_LENGTH
+  char msg_buffer[SCPI_BUFFER_LENGTH];
 };
 
 #endif 
