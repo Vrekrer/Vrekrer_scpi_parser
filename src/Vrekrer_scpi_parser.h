@@ -50,9 +50,9 @@ typedef void (*SCPI_caller_t)(SCPI_C, SCPI_P, Stream&);
 
 class SCPI_Parser {
  public:
-  void SetCommandTreeBase(const char* tree_base);
+  void SetCommandTreeBase(char* tree_base);
   void SetCommandTreeBase(const __FlashStringHelper* tree_base);
-  void RegisterCommand(const char* command, SCPI_caller_t caller);
+  void RegisterCommand(char* command, SCPI_caller_t caller);
   void RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller);
   void Execute(char* message, Stream& interface);
   void ProcessInput(Stream &interface, char* term_chars);

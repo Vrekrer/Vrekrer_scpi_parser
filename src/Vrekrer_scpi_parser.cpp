@@ -166,7 +166,7 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
   this->SetCommandTreeBase(msg_buffer);
 }
 
-void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
+void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   if (strlen(tree_base) > 0) {
     SCPI_Commands tree_tokens(tree_base);
     for (uint8_t i = 0; i < tree_tokens.Size(); i++)
@@ -183,7 +183,7 @@ void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_calle
   this->RegisterCommand(msg_buffer, caller);
 }
 
-void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
+void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken(command_tokens[i]);
