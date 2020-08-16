@@ -92,7 +92,7 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
     this->Append(parameter);
     parameter = strtok(NULL, ",");
   }
-  //TODO add support for strings parameters
+  //TODO add support for strings parameters (do not split parameters inside "")
 }
 
 
@@ -118,6 +118,7 @@ void SCPI_Parser::AddToken(char *token) {
 }
 
 uint32_t SCPI_Parser::GetCommandCode(SCPI_Commands& commands) {
+  //TODO Use a hash function instead of "base_SCPI_MAX_TOKENS numbers".
   uint32_t code = tree_code_ - 1; // tree_code = 1 when execute
   bool isQuery = false;
   for (uint8_t i = 0; i < commands.Size(); i++) {
