@@ -3,10 +3,6 @@
 
 // SCPI_String_Array member functions
 
-SCPI_String_Array::SCPI_String_Array() {}
-
-SCPI_String_Array::~SCPI_String_Array() {}
-
 char* SCPI_String_Array::operator[](const uint8_t index) {
   return values_[index];
 }
@@ -49,8 +45,6 @@ uint8_t SCPI_String_Array::Size() {
 
 // SCPI_Commands member functions
 
-SCPI_Commands::SCPI_Commands() {}
-
 SCPI_Commands::SCPI_Commands(char *message) {
   char* token = message;
   // Trim leading spaces
@@ -72,8 +66,6 @@ SCPI_Commands::SCPI_Commands(char *message) {
 }
 
 // SCPI_Parameters member functions
-
-SCPI_Parameters::SCPI_Parameters() {}
 
 SCPI_Parameters::SCPI_Parameters(char* message) {
   char* parameter = message;

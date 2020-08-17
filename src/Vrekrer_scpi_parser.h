@@ -24,8 +24,6 @@
 
 class SCPI_String_Array {
  public:
-  SCPI_String_Array();
-  ~SCPI_String_Array();
   char* operator[](const byte index);
   void Append(char* value);
   char* Pop();
@@ -39,14 +37,12 @@ class SCPI_String_Array {
 
 class SCPI_Commands : public SCPI_String_Array {
  public:
-  SCPI_Commands();
   SCPI_Commands(char* message);
   char* not_processed_message;
 };
 
 class SCPI_Parameters : public SCPI_String_Array {
  public:
-  SCPI_Parameters();
   SCPI_Parameters(char *message);
   char* not_processed_message;
 };
