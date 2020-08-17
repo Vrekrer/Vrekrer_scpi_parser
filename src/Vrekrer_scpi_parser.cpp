@@ -227,6 +227,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
           break;
         }
     } else { //No chars aviable jet
+      //TODO add a configurable timeout.
       if ((millis() - last_data_millis) > 10) // 10 ms without new data
         continous_data = false;
     }
