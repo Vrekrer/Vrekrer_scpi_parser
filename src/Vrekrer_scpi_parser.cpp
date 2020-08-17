@@ -1,5 +1,4 @@
 #include "Vrekrer_scpi_parser.h"
-#include "Arduino.h"
 
 // SCPI_String_Array member functions
 
@@ -208,31 +207,40 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
 
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
   uint8_t msg_counter = 0;
-  msg_buffer[msg_counter] = '\0';
+  this->msg_buffer[msg_counter] = '\0';
+  this->buffer_overflow = false;
+  this->timeout = false;
 
   bool continous_data = false;
   unsigned long last_data_millis = millis();
   do {
     if (interface.available()) {
-        continous_data = true;
-        last_data_millis = millis();
-        msg_buffer[msg_counter] =  interface.read();
+      continous_data = true;
+      last_data_millis = millis();
+      this->msg_buffer[msg_counter] = interface.read();
 
-        //TODO check msg_counter overflow
-        ++msg_counter;
-        msg_buffer[msg_counter] = '\0';
+      ++msg_counter;
+      if (msg_counter >= SCPI_BUFFER_LENGTH){
+          msg_counter = 0;
+          this->buffer_overflow = true;
+      }
+      msg_buffer[msg_counter] = '\0';
 
-        if (strstr(msg_buffer, term_chars) != NULL) {
-          msg_buffer[msg_counter - strlen(term_chars)] =  '\0';
-          break;
-        }
+      if (strstr(msg_buffer, term_chars) != NULL) {
+        this->msg_buffer[msg_counter - strlen(term_chars)] =  '\0';
+        break;
+      }
     } else { //No chars aviable jet
-      if ((millis() - last_data_millis) > 10) // 10 ms without new data
+      if ((millis() - last_data_millis) > SCPI_TIMEOUT) {
+        this->timeout = true;
         continous_data = false;
+      }
     }
   } while (continous_data);
-  if (continous_data)
-    return msg_buffer;
+  if (buffer_overflow)
+    return NULL;
+  else if (continous_data)
+    return this->msg_buffer;
   else
     return NULL;
 }
