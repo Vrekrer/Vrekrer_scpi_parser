@@ -7,7 +7,6 @@ See the examples
 TODO make a wiki.
 */
 
-
 /*
 Definitions:
 
@@ -19,8 +18,8 @@ Termination chars.
   "\r\n"
 
 Message.
- A string that could contain one or more commands and parameters, and is 
- terminated by termination chars.
+ A string that could contain one or more commands and parameters, and is
+ ended by termination chars.
  e.g.
   "*IDN?; SYSTEM:TIMER:SET 5, minutes; syst:led:brig:inc\n"
   "This message does not contain valid commands.\r\n"
@@ -29,31 +28,31 @@ Tokens.
  Words (strings) used to form a command.
  e.g.
   "SYSTEM", "syst", "*IDN", "TIMER", "SET"
- Tokens are not case sesitive.
- Tokens usualy have a long form (complete word) and a short form (partial word).
- To define valid tokens we use upper case for the short form and lower case to
+ Tokens are not case-sensitive.
+ Tokens usually have a long form (complete word) and a short form (partial word).
+ To define valid tokens, we use uppercase for the short form and lowercase to
  complete the long form (if needed).
  e.g.
   "SYSTem"
-  Sort form : "SYST" 
-  Long form : "system"
+  Sort form: "SYST"
+  Long form: "system"
 
 Commands.
- One or more tokens separeted by the ':' character.
+ One or more tokens separated by the ':' character.
  e.g.
   "*IDN?", "system:timer:set"
  A command terminated in the '?' character is defined as a "query".
  Inside a message commands are separated by the ';' character.
- 
+
 Parameters.
- Comma ',' separated strings that comes after a command in a message.
+ Comma ',' separated strings that come after a command in a message.
  e.g.
   For the message "SYSTEM:TIMER:SET 5, minutes" the parameters are:
-   "5" and "minutes"
+  "5" and "minutes"
  Spaces between parameters are ignored.
 
 Valid commands / Command tree.
- Set of valid commands, usualy defined in a branched form.
+ Set of valid commands, usually defined in a branched form.
  The ':' token separator defines the branches
  e.g.
   "SYSTem:LED:BRIGhtness:INCrease" (Valid command with branch size 4)
@@ -91,7 +90,7 @@ Valid commands / Command tree.
   Values can be extracted (and removed) using the Pop function (LIFO stack Pop).
   Both Append and Pop modifies the Size of the array.
   Values can be read (without removing them) using the following methods:
-    First() : Returns the fist value appended to the array
+    First() : Returns the first value appended to the array
     Last()  : Returns the last value appended to the array
     Indexing (e.g. my_array[1] to get the second value of the array)
   The maximum size of the array is defined by SCPI_ARRAY_SYZE (default 6)
@@ -101,7 +100,7 @@ class SCPI_String_Array {
   char* operator[](const byte index);  //Add indexing capability
   void Append(char* value);            //Append new string (LIFO stack Push)
   char* Pop();                         //LIFO stack Pop
-  char* First();                       //Returns the fist element of the array
+  char* First();                       //Returns the first element of the array
   char* Last();                        //Returns the last element of the array
   uint8_t Size();                      //Current array size
  protected:
@@ -123,7 +122,7 @@ class SCPI_Commands : public SCPI_String_Array {
     
     The message is procesed until a space, ';' or the end of the string is 
     found, the rest is available at not_processed_message.
-    The processed part is splitted on the ':' characters, the resulting parts 
+    The processed part is split on the ':' characters, the resulting parts 
     (tokens) are stored in the array.
   */
   SCPI_Commands(char* message);
@@ -148,8 +147,8 @@ class SCPI_Parameters : public SCPI_String_Array {
 
     The message is procesed until ';' or the end of the string is found, 
     the rest is available at not_processed_message.
-    The processed part is splitted on the ',' characters, the resulting parts
-    (pamareters) are stored in the array after trimming any start or end spaces.
+    The processed part is split on the ',' characters, the resulting parts
+    (parameters) are stored in the array after trimming any start or end spaces.
   */
   SCPI_Parameters(char *message);
   /*!
@@ -181,7 +180,7 @@ class SCPI_Parser {
   /*!
     @brief SetCommandTreeBase version with RAM string support.
     e.g.  my_instrument.SetCommandTreeBase("SYSTem:LED");
-    For lower RAM usage you shoud use the Flash strings version
+    For lower RAM usage you should use the Flash strings version
   */
   void SetCommandTreeBase(const char* tree_base);
 
@@ -201,7 +200,7 @@ class SCPI_Parser {
   /*!
     @brief RegisterCommand version with RAM string support.
     e.g. my_instrument.RegisterCommand("*IDN?", &Identify);
-    For lower RAM usage you shoud use the Flash strings version
+    For lower RAM usage you should use the Flash strings version
   */
   void RegisterCommand(const char* command, SCPI_caller_t caller);
 
@@ -216,24 +215,24 @@ class SCPI_Parser {
            If a valid command is found, its associated procedure is executed.
            The command' tokens and parameters, and the interface is passed
            to the executed procedure.
-    @param message message.to be processed.
+    @param message message to be processed.
     @param interface the source of the message.
     @see GetMessage
   */
   void Execute(char* message, Stream& interface);
 
   /*!
-    @brief Gets a message from an Stream interface and execute it
+    @brief Gets a message from a Stream interface and execute it
     @see GetMessage
     @see Execute
   */
   void ProcessInput(Stream &interface, const char* term_chars);
 
   /*!
-    @brief Gets a message from an Stream interface.
+    @brief Gets a message from a Stream interface.
            Reads the available chars in the interface until the term_chars are 
            found. If the term_chars are not found after 10 ms (hard coded for 
-           now) all the readed chars are discarded.
+           now) all the read chars are discarded.
            Internally this function uses a buffer with SCPI_BUFFER_LENGTH 
            length, no overflow check is done (yet).
     @param interface a Stream interface like Serial or Ethernet.
@@ -260,7 +259,7 @@ class SCPI_Parser {
   uint8_t codes_size_ = 0;
   //Storage of unique codes of the valid commands
   uint32_t valid_codes_[SCPI_MAX_COMMANDS];
-  //Pointers to the functions to be called when a valid command is recieved
+  //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS];
   //Branch offset used when calculating unique codes (1 for root)
   uint32_t tree_code_ = 1;
