@@ -1,29 +1,31 @@
-#ifndef Vrekrer_scpi_parser_h
-#define Vrekrer_scpi_parser_h
+#ifndef VREKRER_SCPI_PARSER_H_
+#define VREKRER_SCPI_PARSER_H_
 
-// Maximun size of commnad tree and number of parameters
+
+// Maximum size of commnad tree and number of parameters.
 #ifndef SCPI_ARRAY_SYZE
-#define SCPI_ARRAY_SYZE 6
-#endif 
-
-#ifndef SCPI_MAX_TOKENS
-#define SCPI_MAX_TOKENS 15
-#endif 
-
-// Maximun number of registered commands 
-#ifndef SCPI_MAX_COMMANDS
-#define SCPI_MAX_COMMANDS 20
-#endif 
-
-// Length of the message buffer
-#ifndef SCPI_BUFFER_LENGTH
-#define SCPI_BUFFER_LENGTH 64
+  #define SCPI_ARRAY_SYZE 6
 #endif
 
-// Timeout, in miliseconds, for GetMessage and ProcessInput
+// Maximum number of valid tokens.
+#ifndef SCPI_MAX_TOKENS
+  #define SCPI_MAX_TOKENS 15
+#endif
+
+// Maximum number of registered commands.
+#ifndef SCPI_MAX_COMMANDS
+  #define SCPI_MAX_COMMANDS 20
+#endif
+
+// Length of the message buffer.
+#ifndef SCPI_BUFFER_LENGTH
+  #define SCPI_BUFFER_LENGTH 64
+#endif
+
+// Timeout, in miliseconds, for GetMessage and ProcessInput.
 #ifndef SCPI_TIMEOUT
-#define SCPI_TIMEOUT 10
-#endif 
+  #define SCPI_TIMEOUT 10
+#endif
 
 #include "Arduino.h"
 
@@ -82,4 +84,4 @@ class SCPI_Parser {
   char msg_buffer[SCPI_BUFFER_LENGTH];
 };
 
-#endif 
+#endif //VREKRER_SCPI_PARSER_H_
