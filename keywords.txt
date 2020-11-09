@@ -1,19 +1,30 @@
 ###############################################
-# Syntax Coloring Map For Vrekrer_spci_parser
+# Map For Vrekrer_spci_parser
 ###############################################
 
-###############################################
 # Datatypes (KEYWORD1)
-###############################################
-
-SCPI_Commands	KEYWORD1
-SCPI_Parameters	KEYWORD1
 SCPI_Parser	KEYWORD1
 
-###############################################
 # Methods and Functions (KEYWORD2)
-###############################################
-
+SetCommandTreeBase	KEYWORD2
 RegisterCommand	KEYWORD2
 Execute	KEYWORD2
-SetCommandTreeBase	KEYWORD2
+ProcessInput	KEYWORD2
+Append	KEYWORD2
+Pop	KEYWORD2
+First	KEYWORD2
+Last	KEYWORD2
+Size	KEYWORD2
+
+# Structures (KEYWORD3)
+SCPI_Commands	KEYWORD3
+SCPI_C	KEYWORD3
+SCPI_Parameters	KEYWORD3
+SCPI_P	KEYWORD3
+
+# Constants (LITERAL1)
+SCPI_ARRAY_SYZE	LITERAL1
+SCPI_MAX_TOKENS	LITERAL1
+SCPI_MAX_COMMANDS	LITERAL1
+SCPI_BUFFER_LENGTH	LITERAL1
+SCPI_TIMEOUT	LITERAL1
