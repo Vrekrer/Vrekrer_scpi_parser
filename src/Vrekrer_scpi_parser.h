@@ -1,6 +1,8 @@
 #ifndef VREKRER_SCPI_PARSER_H_
 #define VREKRER_SCPI_PARSER_H_
 
+// use user settings from ..._conf.h
+#include "Vrekrer_scpi_parser_conf.h"
 
 // Maximum size of commnad tree and number of parameters.
 #ifndef SCPI_ARRAY_SYZE

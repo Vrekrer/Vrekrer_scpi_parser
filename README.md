@@ -19,3 +19,19 @@ A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable
  - Comma separated parameters recognition.
  - Parameters treated as text, processed by the user program.
 
+
+## Installation on platformio
+Add the following to your platformio.ini:
+
+`build_flags = -I include
+
+lib_deps =
+  # RECOMMENDED
+  # Accept new functionality in a backwards compatible manner and patches
+  vrekrer/Vrekrer SCPI parser @ ^0.4.1
+`
+
+Copy the `Vrekrer_scpi_parser_conf_example.h` from the examples directory to your project include folder and rename it to `Vrekrer_scpi_parser_conf.h`.
+
+Modify the default values inside `Vrekrer_scpi_parser_conf.h` according to your projet needs.
+  
