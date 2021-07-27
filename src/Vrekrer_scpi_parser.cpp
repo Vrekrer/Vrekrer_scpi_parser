@@ -200,9 +200,12 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
   SCPI_Commands commands(message);
   SCPI_Parameters parameters(commands.not_processed_message);
   uint32_t code = this->GetCommandCode(commands);
+  this->unknownCommand = true;
   for (uint8_t i = 0; i < codes_size_; i++)
-    if (valid_codes_[i] == code)
+    if (valid_codes_[i] == code){
       (*callers_[i])(commands, parameters, interface);
+      this->unknownCommand = false;
+    }
 }
 
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
@@ -249,6 +252,8 @@ void SCPI_Parser::ProcessInput(Stream& interface, const char* term_chars) {
   char* message = this->GetMessage(interface, term_chars);
   if (message != NULL) {
     this->Execute(message, interface);
+    if (this->unknownCommand) // as kind of workaround to give the user feedback, if the sedet Command was not understooden
+      interface.println(F("ERROR: Unknown Command!"));
   }
 }
 
