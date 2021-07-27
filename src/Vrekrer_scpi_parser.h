@@ -72,6 +72,7 @@ class SCPI_Parser {
   void PrintDebugInfo();
   bool buffer_overflow = false;
   bool timeout = false;
+  bool unknownCommand = false;
  protected:
   void AddToken(char* token);
   uint32_t GetCommandCode(SCPI_Commands& commands);
