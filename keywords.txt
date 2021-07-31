@@ -8,6 +8,7 @@ SCPI_Parser	KEYWORD1
 # Methods and Functions (KEYWORD2)
 SetCommandTreeBase	KEYWORD2
 RegisterCommand	KEYWORD2
+SetErrorHandler	KEYWORD2
 Execute	KEYWORD2
 ProcessInput	KEYWORD2
 Append	KEYWORD2
