@@ -43,6 +43,7 @@ uint8_t SCPI_String_Array::Size() {
 }
 
 // SCPI_Commands member functions
+SCPI_Commands::SCPI_Commands(){}
 
 SCPI_Commands::SCPI_Commands(char *message) {
   char* token = message;
@@ -65,6 +66,7 @@ SCPI_Commands::SCPI_Commands(char *message) {
 }
 
 // SCPI_Parameters member functions
+SCPI_Parameters::SCPI_Parameters(){}
 
 SCPI_Parameters::SCPI_Parameters(char* message) {
   char* parameter = message;
@@ -86,8 +88,17 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
   //TODO add support for strings parameters (do not split parameters inside "")
 }
 
+//Do nothing function
+void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
 
 //SCPI_Registered_Commands member functions
+SCPI_Parser::SCPI_Parser(){
+  callers_[SCPI_MAX_COMMANDS] = &DefaultErrorHandler;
+}
+
+void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
+  callers_[SCPI_MAX_COMMANDS] = caller;
+}
 
 void SCPI_Parser::AddToken(char *token) {
   size_t token_size = strlen(token);
@@ -201,8 +212,12 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
   SCPI_Parameters parameters(commands.not_processed_message);
   uint32_t code = this->GetCommandCode(commands);
   for (uint8_t i = 0; i < codes_size_; i++)
-    if (valid_codes_[i] == code)
+    if (valid_codes_[i] == code) {
       (*callers_[i])(commands, parameters, interface);
+      return;
+    }
+   //Call ErrorHandler due to receiving an unknown command
+  (*callers_[SCPI_MAX_COMMANDS])(commands, parameters, interface);
 }
 
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
@@ -273,3 +288,5 @@ void SCPI_Parser::PrintDebugInfo() {
   Serial.println(F("*******************"));
   Serial.println();
 }
+
+

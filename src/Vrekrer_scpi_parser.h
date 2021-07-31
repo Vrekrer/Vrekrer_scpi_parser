@@ -44,12 +44,14 @@ class SCPI_String_Array {
 
 class SCPI_Commands : public SCPI_String_Array {
  public:
+  SCPI_Commands();
   SCPI_Commands(char* message);
   char* not_processed_message;
 };
 
 class SCPI_Parameters : public SCPI_String_Array {
  public:
+  SCPI_Parameters();
   SCPI_Parameters(char *message);
   char* not_processed_message;
 };
@@ -60,12 +62,14 @@ typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
 
 class SCPI_Parser {
  public:
+  SCPI_Parser();
   void SetCommandTreeBase(char* tree_base);
   void SetCommandTreeBase(const char* tree_base);
   void SetCommandTreeBase(const __FlashStringHelper* tree_base);
   void RegisterCommand(char* command, SCPI_caller_t caller);
   void RegisterCommand(const char* command, SCPI_caller_t caller);
   void RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller);
+  void SetErrorHandler(SCPI_caller_t caller);
   void Execute(char* message, Stream& interface);
   void ProcessInput(Stream &interface, const char* term_chars);
   char* GetMessage(Stream& interface, const char* term_chars);
@@ -79,7 +83,7 @@ class SCPI_Parser {
   char *tokens_[SCPI_MAX_TOKENS];
   uint8_t codes_size_ = 0;
   uint32_t valid_codes_[SCPI_MAX_COMMANDS];
-  SCPI_caller_t callers_[SCPI_MAX_COMMANDS];
+  SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
   uint32_t tree_code_ = 1;
   char msg_buffer[SCPI_BUFFER_LENGTH];
 };
