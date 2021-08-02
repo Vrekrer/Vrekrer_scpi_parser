@@ -216,48 +216,49 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
       (*callers_[i])(commands, parameters, interface);
       return;
     }
-   //Call ErrorHandler due to receiving an unknown command
+  //Call ErrorHandler UnknownCommand
+  last_error = ErrorCode::UnknownCommand;
   (*callers_[SCPI_MAX_COMMANDS])(commands, parameters, interface);
 }
 
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
-  uint8_t msg_counter = 0;
-  this->msg_buffer[msg_counter] = '\0';
-  this->buffer_overflow = false;
-  this->timeout = false;
+  uint8_t message_length = 0;
+  unsigned long time_checker = millis();
 
-  bool continous_data = false;
-  unsigned long last_data_millis = millis();
-  do {
+  while (true) {
     if (interface.available()) {
-      continous_data = true;
-      last_data_millis = millis();
-      this->msg_buffer[msg_counter] = interface.read();
+      //Read the new char
+      msg_buffer[message_length] = interface.read();
+      ++message_length;
+      time_checker = millis();
 
-      ++msg_counter;
-      if (msg_counter >= SCPI_BUFFER_LENGTH){
-          msg_counter = 0;
-          this->buffer_overflow = true;
+      //Check for buffer Overflow
+      if (message_length >= SCPI_BUFFER_LENGTH){
+        //Call ErrorHandler due BufferOverflow
+        last_error = ErrorCode::BufferOverflow;
+        (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
+        return NULL;
       }
-      msg_buffer[msg_counter] = '\0';
 
+      //Check for termination chars
+      msg_buffer[message_length] = '\0';
       if (strstr(msg_buffer, term_chars) != NULL) {
-        this->msg_buffer[msg_counter - strlen(term_chars)] =  '\0';
-        break;
+        msg_buffer[message_length - strlen(term_chars)] =  '\0';
+        return msg_buffer;
       }
     } else { //No chars aviable jet
-      if ((millis() - last_data_millis) > SCPI_TIMEOUT) {
-        this->timeout = true;
-        continous_data = false;
+      //TODO return control to the main loop
+      if (message_length == 0) return NULL;
+      while (not interface.available()) {
+        if ((millis() - time_checker) > SCPI_TIMEOUT) {
+          //Call ErrorHandler due Timeout
+          last_error = ErrorCode::Timeout;
+          (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
+          return NULL;
+        }
       }
     }
-  } while (continous_data);
-  if (buffer_overflow)
-    return NULL;
-  else if (continous_data)
-    return this->msg_buffer;
-  else
-    return NULL;
+  }
 }
 
 void SCPI_Parser::ProcessInput(Stream& interface, const char* term_chars) {
