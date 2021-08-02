@@ -91,6 +91,8 @@ class SCPI_Parser {
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
   uint32_t tree_code_ = 1;
   char msg_buffer[SCPI_BUFFER_LENGTH];
+  uint8_t message_length = 0;
+  unsigned long time_checker;
 };
 
 #endif //VREKRER_SCPI_PARSER_H_

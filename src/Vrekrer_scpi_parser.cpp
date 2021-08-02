@@ -222,42 +222,40 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
 }
 
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
-  uint8_t message_length = 0;
-  unsigned long time_checker = millis();
+  while (interface.available()) {
+    //Read the new char
+    msg_buffer[message_length] = interface.read();
+    ++message_length;
+    time_checker = millis();
 
-  while (true) {
-    if (interface.available()) {
-      //Read the new char
-      msg_buffer[message_length] = interface.read();
-      ++message_length;
-      time_checker = millis();
-
-      //Check for buffer Overflow
-      if (message_length >= SCPI_BUFFER_LENGTH){
-        //Call ErrorHandler due BufferOverflow
-        last_error = ErrorCode::BufferOverflow;
-        (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
-        return NULL;
-      }
-
-      //Check for termination chars
-      msg_buffer[message_length] = '\0';
-      if (strstr(msg_buffer, term_chars) != NULL) {
-        msg_buffer[message_length - strlen(term_chars)] =  '\0';
-        return msg_buffer;
-      }
-    } else { //No chars aviable jet
-      //TODO return control to the main loop
-      if (message_length == 0) return NULL;
-      while (not interface.available()) {
-        if ((millis() - time_checker) > SCPI_TIMEOUT) {
-          //Call ErrorHandler due Timeout
-          last_error = ErrorCode::Timeout;
-          (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
-          return NULL;
-        }
-      }
+    //Check for buffer overflow
+    if (message_length >= SCPI_BUFFER_LENGTH){
+      //Call ErrorHandler due BufferOverflow
+      last_error = ErrorCode::BufferOverflow;
+      (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
+      message_length = 0;
+      return NULL;
     }
+
+    //Check for termination chars
+    msg_buffer[message_length] = '\0';
+    if (strstr(msg_buffer, term_chars) != NULL) {
+      //Return the received message
+      msg_buffer[message_length - strlen(term_chars)] =  '\0';
+      message_length = 0;
+      return msg_buffer;
+    }
+  }
+  //No more chars aviable yet
+  if (message_length == 0) return NULL;
+
+  //Check for communication timeout
+  if ((millis() - time_checker) > SCPI_TIMEOUT) {
+      //Call ErrorHandler due Timeout
+      last_error = ErrorCode::Timeout;
+      (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
+      message_length = 0;
+      return NULL;
   }
 }
 
