@@ -82,17 +82,17 @@ class SCPI_Parser {
   char* GetMessage(Stream& interface, const char* term_chars);
   void PrintDebugInfo();
  protected:
-  void AddToken(char* token);
-  uint32_t GetCommandCode(SCPI_Commands& commands);
+  void AddToken_(char* token);
+  uint32_t GetCommandCode_(SCPI_Commands& commands);
   uint8_t tokens_size_ = 0;
   char *tokens_[SCPI_MAX_TOKENS];
   uint8_t codes_size_ = 0;
   uint32_t valid_codes_[SCPI_MAX_COMMANDS];
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
   uint32_t tree_code_ = 1;
-  char msg_buffer[SCPI_BUFFER_LENGTH];
-  uint8_t message_length = 0;
-  unsigned long time_checker;
+  char msg_buffer_[SCPI_BUFFER_LENGTH];
+  uint8_t message_length_ = 0;
+  unsigned long time_checker_;
 };
 
 #endif //VREKRER_SCPI_PARSER_H_
