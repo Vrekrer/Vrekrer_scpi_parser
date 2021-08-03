@@ -27,6 +27,10 @@
   #define SCPI_TIMEOUT 10
 #endif
 
+#ifndef SCPI_HASH_TYPE
+  #define SCPI_HASH_TYPE uint8_t
+#endif
+
 #include "Arduino.h"
 
 class SCPI_String_Array {
@@ -83,13 +87,13 @@ class SCPI_Parser {
   void PrintDebugInfo();
  protected:
   void AddToken_(char* token);
-  uint32_t GetCommandCode_(SCPI_Commands& commands);
+  SCPI_HASH_TYPE GetCommandCode_(SCPI_Commands& commands);
   uint8_t tokens_size_ = 0;
   char *tokens_[SCPI_MAX_TOKENS];
   uint8_t codes_size_ = 0;
-  uint32_t valid_codes_[SCPI_MAX_COMMANDS];
+  SCPI_HASH_TYPE valid_codes_[SCPI_MAX_COMMANDS];
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
-  uint32_t tree_code_ = 1;
+  SCPI_HASH_TYPE tree_code_ = 0;
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   uint8_t message_length_ = 0;
   unsigned long time_checker_;

@@ -119,49 +119,69 @@ void SCPI_Parser::AddToken_(char *token) {
   }
 }
 
-uint32_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
-  //TODO Use a hash function instead of "base_SCPI_MAX_TOKENS numbers".
-  uint32_t code = tree_code_ - 1; // tree_code = 1 when execute
+SCPI_HASH_TYPE SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
+  SCPI_HASH_TYPE code;
+  if (tree_code_) {
+    code = tree_code_;
+  } else {
+    code = 7; //Magic hash offset
+  }
   bool isQuery = false;
+
+  //Loop all headers in the command
   for (uint8_t i = 0; i < commands.Size(); i++) {
-    code *= SCPI_MAX_TOKENS;
-    size_t header_length = strlen(commands[i]);  //header's length
-    if (i == commands.Size() - 1) { //Last header
+    //Get header's length
+    size_t header_length = strlen(commands[i]);
+    
+    //For the last header test if it is a query
+    //and remove '?' from the header's length if needed.
+    if (i == commands.Size() - 1) {
       isQuery = (commands[i][header_length - 1] == '?');
       if (isQuery) header_length--;
     }
-    
+
     bool isToken;
     for (uint8_t j = 0; j < tokens_size_; j++) {
-      size_t short_length = 0; //short token's length
+      //Get the token's short and long lengths
+      size_t short_length = 0;
       while (isupper(tokens_[j][short_length])) short_length++;
-      size_t long_length = strlen(tokens_[j]); //long token's length
+      size_t long_length = strlen(tokens_[j]);
 
-      if ( (tokens_[j][long_length - 1] == '#') //Numeric suffix capable token
+      //If the token allows numeric suffixes
+      //remove the trailing digits from the header
+      if ( (tokens_[j][long_length - 1] == '#')
          && (commands[i][header_length - 1] != '#') ) {
         long_length--;
         while (isdigit(commands[i][header_length - 1])) header_length--;
       }
 
+      //Test if the header match with the token
       isToken = true;
-      if (header_length == short_length) { //match with short token
+      if (header_length == short_length) {
         for (uint8_t k  = 0; k < short_length; k++)
           isToken &= (toupper(commands[i][k]) == tokens_[j][k]);
-      } else if (header_length == long_length) { //match with long token
+      } else if (header_length == long_length) {
         for (uint8_t k  = 0; k < long_length; k++)
           isToken &= (toupper(commands[i][k]) == toupper(tokens_[j][k]));
       } else {
         isToken = false;
       }
+
+      //We use the token number j for hashing
+      //hash(i) = hash(i - 1) * 37 + j
       if (isToken) {
+        code *= 37;
         code += j;
         break;
       }
     }
-    if (!isToken) return 0;
+    if (!isToken) return 255;
   }
-  if (isQuery) code ^= 0x80000000;
-  return code+1;
+  if (isQuery) {
+    code *= 37;
+    code -= 1;
+  }
+  return code;
 }
 
 void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
@@ -179,10 +199,10 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
     SCPI_Commands tree_tokens(tree_base);
     for (uint8_t i = 0; i < tree_tokens.Size(); i++)
       AddToken_(tree_tokens[i]);
-    tree_code_ = 1;
+    tree_code_ = 0;
     tree_code_ = this->GetCommandCode_(tree_tokens);
   } else {
-    tree_code_ = 1;
+    tree_code_ = 0;
   }
 }
 
@@ -200,17 +220,17 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
-  uint32_t code = this->GetCommandCode_(command_tokens);
+  SCPI_HASH_TYPE code = this->GetCommandCode_(command_tokens);
   valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
 }
 
 void SCPI_Parser::Execute(char* message, Stream &interface) {
-  tree_code_ = 1;
+  tree_code_ = 0;
   SCPI_Commands commands(message);
   SCPI_Parameters parameters(commands.not_processed_message);
-  uint32_t code = this->GetCommandCode_(commands);
+  SCPI_HASH_TYPE code = this->GetCommandCode_(commands);
   for (uint8_t i = 0; i < codes_size_; i++)
     if (valid_codes_[i] == code) {
       (*callers_[i])(commands, parameters, interface);
