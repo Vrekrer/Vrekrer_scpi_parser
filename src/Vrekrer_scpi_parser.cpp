@@ -213,9 +213,9 @@ SCPI_HASH_TYPE SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       }
 
       //We use the token number j for hashing
-      //hash(i) = hash(i - 1) * 37 + j
+      //hash(i) = hash(i - 1) * hash_magic_number + j
       if (isToken) {
-        code *= 37;
+        code *= hash_magic_number;
         code += j;
         break;
       }

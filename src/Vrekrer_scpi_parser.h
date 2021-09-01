@@ -144,6 +144,8 @@ class SCPI_Parser {
   char* GetMessage(Stream& interface, const char* term_chars);
   //Prints registered tokens and command hashes to the serial interface
   void PrintDebugInfo();
+  ///Magic number used for hashing the commands
+  SCPI_HASH_TYPE hash_magic_number = 37;
   
  protected:
   //Add a token to the tokens' storage
