@@ -55,11 +55,11 @@ uint8_t SCPI_String_Array::Size() {
 SCPI_Commands::SCPI_Commands(){}
 
 /*!
- Constructor that extracts and tokenize a command from a message.
- @param message to process.
+ Constructor that extracts and tokenize a command from a message.  
+ @param message  Message to process.
 
  The message is processed until a space, ';' or the end of the string is 
- found, the rest is available at not_processed_message.
+ found, the rest is available at not_processed_message.  
  The processed part is split on the ':' characters, the resulting parts 
  (tokens) are stored in the array.
 */
@@ -91,11 +91,11 @@ SCPI_Parameters::SCPI_Parameters(){}
 
 
 /*!
- Constructor that extracts and splits parameters from a message.
- @param message to process.
+ Constructor that extracts and splits parameters from a message.  
+ @param message[in,out]  Message to process.
 
  The message is processed until ';' or the end of the string is found, 
- the rest is available at not_processed_message.
+ the rest is available at not_processed_message.  
  The processed part is split on the ',' characters, the resulting parts 
  (parameters) are stored in the array after trimming any start or end spaces.
 */
@@ -128,8 +128,8 @@ void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
 /*!
  SCPI_Parser constructor.
 
- Example: 
-  SCPI_Parser my_instrument;
+ Example:  
+  ``SCPI_Parser my_instrument``;
 */
 SCPI_Parser::SCPI_Parser(){
   callers_[SCPI_MAX_COMMANDS] = &DefaultErrorHandler;
@@ -157,11 +157,11 @@ void SCPI_Parser::AddToken_(char *token) {
 
 /*!
  Get a hash from a valid command
- @param commands, keywords of a command
+ @param commands  Keywords of a command
  @return hash
 
- Returnn 0 if the command contains keywords not registered as tokens.
- The hash is calculated including the TreeBase hash.
+ Returnn 0 if the command contains keywords not registered as tokens.  
+ The hash is calculated including the TreeBase hash.  
  @see SetCommandTreeBase
 */
 SCPI_HASH_TYPE SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
@@ -231,8 +231,8 @@ SCPI_HASH_TYPE SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
 
 /*!
  Change the TreeBase for the next RegisterCommand calls.
- @param tree_base,  TreeBase to be used.
-        An empty string "" sets the TreeBase to root.
+ @param tree_base  TreeBase to be used.  
+        An empty string ``""`` sets the TreeBase to root.
 */
 void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   if (strlen(tree_base) > 0) {
@@ -249,8 +249,8 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
 /*!
  SetCommandTreeBase version with RAM string support.
 
- Example:
-  my_instrument.SetCommandTreeBase("SYSTem:LED");
+ Example:  
+ ``my_instrument.SetCommandTreeBase("SYSTem:LED");``  
  For lower RAM usage use the Flash strings version.
 */
 void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
@@ -261,8 +261,8 @@ void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
 /*!
  SetCommandTreeBase version with Flash strings (F() macro) support.
 
- Example:
-  my_instrument.SetCommandTreeBase(F("SYSTem:LED"));
+ Example:  
+  ``my_instrument.SetCommandTreeBase(F("SYSTem:LED"));``
 */
 void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
   strcpy_P(msg_buffer_, (const char *) tree_base);
@@ -271,8 +271,8 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 
 /*!
  Registers a new valid command and associate a procedure to it.
- @param command, new valid command.
- @param caller, procedure associated to the valid command.
+ @param command  New valid command.
+ @param caller  Procedure associated to the valid command.
 */
 void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
@@ -287,8 +287,8 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
 /*!
  RegisterCommand version with RAM string support.
 
- Example:
-  my_instrument.RegisterCommand("*IDN?", &Identify);
+ Example:  
+  ``my_instrument.RegisterCommand("*IDN?", &Identify);``  
  For lower RAM usage use the Flash strings version.
 */
 void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
@@ -299,8 +299,8 @@ void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
 /*!
  RegisterCommand version with Flash strings (F() macro) support.
 
- Example:
-  my_instrument.RegisterCommand(F("*IDN?"), &Identify);
+ Example:  
+  ``my_instrument.RegisterCommand(F("*IDN?"), &Identify);``
 */
 void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller) {
   strcpy_P(msg_buffer_, (const char *) command);
@@ -310,8 +310,8 @@ void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_calle
 /*!
  Set the function to be used by the error handler.
 
- Example:
-  my_instrument.SetErrorHandler(&myErrorHandler);
+ Example:  
+  ``my_instrument.SetErrorHandler(&myErrorHandler);``
 */
 void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
   callers_[SCPI_MAX_COMMANDS] = caller;
@@ -320,13 +320,13 @@ void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
 
 /*!
  Process a message and execute it a valid command is found.
- @param message, message to be processed.
- @param interface, the source of the message.
+ @param message  Message to be processed.
+ @param interface  The source of the message.
  
- Commands and parameters are extracted from the message, 
- if a valid command is found, its associated procedure is executed.
+ Commands and parameters are extracted from the message,  
+ if a valid command is found, its associated procedure is executed.  
  The command' tokens and parameters, and the interface is passed
- to the executed procedure.
+ to the executed procedure.  
  @see GetMessage
 */
 void SCPI_Parser::Execute(char* message, Stream &interface) {
@@ -359,15 +359,15 @@ void SCPI_Parser::ProcessInput(Stream& interface, const char* term_chars) {
 
 /*!
  Gets a message from a Stream interface.
- @param interface, a Stream interface like Serial or Ethernet.
- @param term_chars, termination chars e.g. "\r\n".
- @return the read message if the term_chars are found, otherwise NULL
+ @param interface  A Stream interface like Serial or Ethernet.
+ @param term_chars  Termination chars e.g. ``"\r\n"``.
+ @return the read message if the ``term_chars`` are found, otherwise ``NULL``.
 
  Reads the available chars in the interface, if the term_chars are found
- the message is returned, otherwise the return is NULL.
- Subsequent calls to this function continues the message reading
- The message is discarded, and the error handler is called if:
-  A timeout occurs (10 ms without new chars)
+ the message is returned, otherwise the return is ``NULL``.  
+ Subsequent calls to this function continues the message reading.  
+ The message is discarded, and the error handler is called if:  
+  A timeout occurs (10 ms without new chars)  
   The message buffer overflows
 */
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {

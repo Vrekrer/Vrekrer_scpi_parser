@@ -1,0 +1,45 @@
+PROJECT_NAME           = "Vrekrer SCPI parser"
+PROJECT_NUMBER         = 0.5
+PROJECT_BRIEF          = "A simple SCPI parser for small Arduino projects."
+
+#Style
+HTML_COLORSTYLE_HUE = 160
+HTML_COLORSTYLE_SAT = 10
+
+
+DISABLE_INDEX = YES
+GENERATE_TREEVIEW = YES
+
+FULL_PATH_NAMES        = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+SHOW_FILES             = YES
+
+SEPARATE_MEMBER_PAGES = NO
+
+INPUT = ../ \
+        ../src/ \
+        ../doc/doc_pages/
+
+FILE_PATTERNS          = *.h \
+                         *.cpp \
+                         *.md
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+
+
+INLINE_INHERITED_MEMB  = YES
+
+#Fist line is brief.
+QT_AUTOBRIEF = YES
+JAVADOC_AUTOBRIEF = YES
+#JAVADOC_BANNER = YES
+
+SHOW_USED_FILES = NO
+
+EXTRACT_ALL = NO
+EXTRACT_STATIC = YES
+CREATE_SUBDIRS = NO
+SEARCH_ENGINE = NO
+
+

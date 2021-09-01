@@ -1,63 +1,10 @@
+/*! 
+@file Vrekrer_scpi_parser.h 
+Header file.
+*/
+
 #ifndef VREKRER_SCPI_PARSER_H_
 #define VREKRER_SCPI_PARSER_H_
-
-/*!
-Usage:
-See the examples
-*/
-
-/*!
-Definitions:
-
-Termination chars.
- A string formed by any characters that indicates the end of a message.
- Usual termination chars are LineFeed '\n' and/or CarrierReturn '\r'.
- Example:
-  "\n"
-  "\r\n"
-
-Message.
- A string that could contain one or more commands and parameters, and is
- ended by termination chars.
- Example:
-  "*IDN?; SYSTEM:TIMER:SET 5, minutes; syst:led:brig:inc\n"
-  "This message does not contain valid commands.\r\n"
-
-Tokens.
- Keywords (strings) used to form a command.
- e.g.
-  "SYSTEM", "syst", "*IDN", "TIMER", "SET"
- Tokens are not case-sensitive.
- Tokens usually have a long form (complete word) and a short form (partial word).
- To define valid tokens, we use uppercase for the short form and lowercase to
- complete the long form (if needed).
- Example:
-  "SYSTem"
-  Sort form: "SYST"
-  Long form: "system"
-
-Commands.
- One or more tokens separated by the ':' character.
- Example:
-  "*IDN?", "system:timer:set"
- A command terminated in the '?' character is defined as a "query".
- Inside a message, commands are separated by the ';' character.
-
-Parameters.
- Comma ',' separated strings that come after a command in a message.
- Example:
-  For the message "SYSTEM:TIMER:SET 5, minutes" the parameters are:
-  "5" and "minutes"
- Spaces between parameters are ignored.
-
-Valid commands / Command tree.
- Set of valid commands, usually defined in a branched form.
- The ':' token separator defines the branches
- Example:
-  "SYSTem:LED:BRIGhtness:INCrease" (Valid command with branch size 4)
-  "SYSTem:LED:BRIGhtness:DEcrease"
-  Both commands share the TreeBase "SYSTem:LED:BRIGhtness"
-*/
 
 
 /// Max branch size of the command tree and max number of parameters.
@@ -95,14 +42,15 @@ Valid commands / Command tree.
 /*!
  Variable size string array class.
 
- The array must be filled using the Append method (acts as a LIFO stack Push).
- Values can be extracted (and removed) using the Pop function (LIFO stack Pop).
- Both Append and Pop modifies the Size of the array.
- Values can be read (without removing them) using the following methods:
-  First() : Returns the first value appended to the array.
-  Last()  : Returns the last value appended to the array.
-  Indexing (e.g. my_array[1] to get the second value of the array).
- The max size of the array is defined by SCPI_ARRAY_SYZE (default 6).
+ The array must be filled using the \c Append method (acts as a LIFO stack Push). \n
+ Values can be extracted (and removed) using the \c Pop function (LIFO stack Pop). \n
+ Both \c Append and \c Pop modifies the \c Size of the array. \n
+ Values can be read (without removing them) using the following methods: \n
+  \li \c First() : Returns the first value appended to the array.
+  \li \c Last()  : Returns the last value appended to the array.
+  \li Indexing (e.g. \c my_array[1] to get the second value of the array).
+
+ The max size of the array is defined by \c SCPI_ARRAY_SYZE (default 6).
 */
 class SCPI_String_Array {
  public:
@@ -119,8 +67,6 @@ class SCPI_String_Array {
 
 /*!
  String array class used to store the tokens of a command.
-
- This class inherits the properties of SCPI_String_Array.
  @see SCPI_String_Array
 */
 class SCPI_Commands : public SCPI_String_Array {
@@ -135,8 +81,6 @@ class SCPI_Commands : public SCPI_String_Array {
 
 /*!
  String array class used to store the parameters found after a command.
-
- This class inherits the properties of SCPI_String_Array.
  @see SCPI_String_Array
 */
 class SCPI_Parameters : public SCPI_String_Array {
@@ -149,8 +93,11 @@ class SCPI_Parameters : public SCPI_String_Array {
   char* not_processed_message;
 };
 
-typedef SCPI_Commands SCPI_C; ///Alias of SCPI_Commands.
-typedef SCPI_Parameters SCPI_P; ///Alias of SCPI_Parameters.
+///Alias of SCPI_Commands.
+typedef SCPI_Commands SCPI_C;
+
+///Alias of SCPI_Parameters.
+typedef SCPI_Parameters SCPI_P;
 
 ///Void template used with SCPI_Parser::RegisterCommand.
 typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
@@ -178,10 +125,14 @@ class SCPI_Parser {
   void SetErrorHandler(SCPI_caller_t caller);
   ///SCPI Error codes.
   enum class ErrorCode{
+    ///No error
     NoError,
-    UnknownCommand, ///Unknown command receiving
-    Timeout, ///Timeout before receiving the termination chars
-    BufferOverflow, ///Message buffer overflow
+    ///Unknown command received.
+    UnknownCommand,
+    ///Timeout before receiving the termination chars.
+    Timeout,
+    ///Message buffer overflow.
+    BufferOverflow,
   };
   ///Variable that holds the last error code.
   ErrorCode last_error = ErrorCode::NoError;
