@@ -58,25 +58,23 @@ SCPI_Commands::SCPI_Commands(){}
  Constructor that extracts and tokenize a command from a message.  
  @param message  Message to process.
 
- The message is processed until a space, ';' or the end of the string is 
+ The message is processed until a space, tab or the end of the string is 
  found, the rest is available at not_processed_message.  
  The processed part is split on the ':' characters, the resulting parts 
  (tokens) are stored in the array.
 */
-SCPI_Commands::SCPI_Commands(char *message) {
+SCPI_Commands::SCPI_Commands(char* message) {
   char* token = message;
-  // Trim leading spaces
+  // Trim leading spaces and tabs
   while (isspace(*token)) token++;
-  // Discard parameters and multicommands
-  not_processed_message = strpbrk(token, " \t;");
+  // Save parameters and multicommands for later
+  not_processed_message = strpbrk(token, " \t");
   if (not_processed_message != NULL) {
-    not_processed_message += 1;
-    token = strtok(token, " \t;");
-    token = strtok(token, ":");
-  } else {
-    token = strtok(token, ":");
+   not_processed_message[0] = '\0';
+   not_processed_message++;
   }
-  // Strip using ':'
+  // Split using ':'
+  token = strtok(token, ":");
   while (token != NULL) {
     this->Append(token);
     token = strtok(NULL, ":");
@@ -94,23 +92,13 @@ SCPI_Parameters::SCPI_Parameters(){}
  Constructor that extracts and splits parameters from a message.  
  @param message[in,out]  Message to process.
 
- The message is processed until ';' or the end of the string is found, 
- the rest is available at not_processed_message.  
- The processed part is split on the ',' characters, the resulting parts 
- (parameters) are stored in the array after trimming any start or end spaces.
+ The message is split on the ',' characters, the resulting parts 
+ (parameters) are stored in the array after trimming any start spaces.
 */
 SCPI_Parameters::SCPI_Parameters(char* message) {
   char* parameter = message;
-  // Discard multicommands
-  not_processed_message = strpbrk(parameter, ";");
-  if (not_processed_message != NULL) {
-    not_processed_message += 1;
-    parameter = strtok(parameter, ";");
-    parameter = strtok(parameter, ",");
-  } else {
-    parameter = strtok(parameter, ",");
-  }
-  // Strip using ','
+  // Split using ','
+  parameter = strtok(parameter, ",");
   while (parameter != NULL) {
     while(isspace(*parameter)) parameter++;
     this->Append(parameter);
@@ -319,7 +307,7 @@ void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
 
 
 /*!
- Process a message and execute it a valid command is found.
+ Process a message and execute it if a valid command is found.
  @param message  Message to be processed.
  @param interface  The source of the message.
  
@@ -330,19 +318,32 @@ void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
  @see GetMessage
 */
 void SCPI_Parser::Execute(char* message, Stream &interface) {
-  tree_code_ = 0;
-  SCPI_Commands commands(message);
-  SCPI_Parameters parameters(commands.not_processed_message);
-  SCPI_HASH_TYPE code = this->GetCommandCode_(commands);
-  for (uint8_t i = 0; i < codes_size_; i++)
-    if (valid_codes_[i] == code) {
-      (*callers_[i])(commands, parameters, interface);
-      return;
+  while (message != NULL) {
+    //Save multicomands for later
+    char* multicomands = strpbrk(message, ";");
+    if (multicomands != NULL) {
+     multicomands[0] = '\0';
+     multicomands++;
     }
-  //code not found in valid_codes_
-  //Call ErrorHandler UnknownCommand
-  last_error = ErrorCode::UnknownCommand;
-  (*callers_[SCPI_MAX_COMMANDS])(commands, parameters, interface);
+
+    tree_code_ = 0;
+    SCPI_Commands commands(message);
+    SCPI_Parameters parameters(commands.not_processed_message);
+    SCPI_HASH_TYPE code = this->GetCommandCode_(commands);
+    uint8_t i;
+    for (i = 0; i < codes_size_; i++)
+      if (valid_codes_[i] == code) {
+        (*callers_[i])(commands, parameters, interface);
+        break;
+      }
+    if (i==codes_size_) {
+      //code not found in valid_codes_
+      //Call ErrorHandler UnknownCommand
+      last_error = ErrorCode::UnknownCommand;
+      (*callers_[SCPI_MAX_COMMANDS])(commands, parameters, interface);
+    }
+    message = multicomands;
+  }
 }
 
 /*!
