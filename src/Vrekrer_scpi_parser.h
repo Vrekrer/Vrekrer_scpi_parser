@@ -39,6 +39,12 @@ Header file.
 
 #include "Arduino.h"
 
+/// Length of the message buffer.
+const uint8_t scpi_buffer_length = SCPI_BUFFER_LENGTH;
+
+/// Timeout, in miliseconds, for GetMessage and ProcessInput.
+const int scpi_timeout = SCPI_TIMEOUT;
+
 /*!
  Variable size string array class.
 
@@ -61,6 +67,7 @@ class SCPI_String_Array {
   char* Last();                        //Returns the last element of the array
   uint8_t Size();                      //Array size
  protected:
+  const uint8_t storage_size = SCPI_ARRAY_SYZE; //Max size of the array 
   uint8_t size_ = 0;              //Internal array size
   char* values_[SCPI_ARRAY_SYZE]; //Storage of the strings
 };
@@ -151,6 +158,9 @@ class SCPI_Parser {
   scpi_hash_t hash_magic_number = 37;
   
  protected:
+  const uint8_t max_tokens = SCPI_MAX_TOKENS;
+  const uint8_t max_commands = SCPI_MAX_COMMANDS;
+
   //Add a token to the tokens' storage
   void AddToken_(char* token);
   //Get a hash from a command

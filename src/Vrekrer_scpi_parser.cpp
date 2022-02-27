@@ -9,7 +9,7 @@ char* SCPI_String_Array::operator[](const uint8_t index) {
 
 ///Append new string (LIFO stack Push).
 void SCPI_String_Array::Append(char* value) {
-  if (size_ < SCPI_ARRAY_SYZE) {
+  if (size_ < storage_size) {
     values_[size_] = value;
     size_++;
   }
@@ -120,7 +120,7 @@ void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
   ``SCPI_Parser my_instrument``;
 */
 SCPI_Parser::SCPI_Parser(){
-  callers_[SCPI_MAX_COMMANDS] = &DefaultErrorHandler;
+  callers_[max_commands] = &DefaultErrorHandler;
 }
 
 ///Add a token to the tokens' storage
@@ -133,7 +133,7 @@ void SCPI_Parser::AddToken_(char *token) {
   for (uint8_t i = 0; i < tokens_size_; i++)
     allready_added ^= (strncmp(token, tokens_[i], token_size) == 0);
   if (!allready_added) {
-    if (tokens_size_ < SCPI_MAX_TOKENS) {
+    if (tokens_size_ < max_tokens) {
       char *stored_token = new char [token_size + 1];
       strncpy(stored_token, token, token_size);
       stored_token[token_size] = '\0';
@@ -302,7 +302,7 @@ void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_calle
   ``my_instrument.SetErrorHandler(&myErrorHandler);``
 */
 void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
-  callers_[SCPI_MAX_COMMANDS] = caller;
+  callers_[max_commands] = caller;
 }
 
 
@@ -340,7 +340,7 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
       //code not found in valid_codes_
       //Call ErrorHandler UnknownCommand
       last_error = ErrorCode::UnknownCommand;
-      (*callers_[SCPI_MAX_COMMANDS])(commands, parameters, interface);
+      (*callers_[max_commands])(commands, parameters, interface);
     }
     message = multicomands;
   }
@@ -378,10 +378,10 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     ++message_length_;
     time_checker_ = millis();
 
-    if (message_length_ >= SCPI_BUFFER_LENGTH){
+    if (message_length_ >= scpi_buffer_length){
       //Call ErrorHandler due BufferOverflow
       last_error = ErrorCode::BufferOverflow;
-      (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
+      (*callers_[max_commands])(SCPI_C(), SCPI_P(), interface);
       message_length_ = 0;
       return NULL;
     }
@@ -401,10 +401,10 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
   if (message_length_ == 0) return NULL;
 
   //Check for communication timeout
-  if ((millis() - time_checker_) > SCPI_TIMEOUT) {
+  if ((millis() - time_checker_) > scpi_timeout) {
       //Call ErrorHandler due Timeout
       last_error = ErrorCode::Timeout;
-      (*callers_[SCPI_MAX_COMMANDS])(SCPI_C(), SCPI_P(), interface);
+      (*callers_[max_commands])(SCPI_C(), SCPI_P(), interface);
       message_length_ = 0;
       return NULL;
   }
