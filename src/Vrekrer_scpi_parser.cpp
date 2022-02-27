@@ -148,7 +148,7 @@ void SCPI_Parser::AddToken_(char *token) {
  @param commands  Keywords of a command
  @return hash
 
- Returnn 0 if the command contains keywords not registered as tokens.  
+ Return 0 if the command contains keywords not registered as tokens.  
  The hash is calculated including the TreeBase hash.  
  @see SetCommandTreeBase
 */
@@ -378,7 +378,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     ++message_length_;
     time_checker_ = millis();
 
-    if (message_length_ >= scpi_buffer_length){
+    if (message_length_ >= buffer_length){
       //Call ErrorHandler due BufferOverflow
       last_error = ErrorCode::BufferOverflow;
       (*callers_[max_commands])(SCPI_C(), SCPI_P(), interface);
@@ -401,7 +401,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
   if (message_length_ == 0) return NULL;
 
   //Check for communication timeout
-  if ((millis() - time_checker_) > scpi_timeout) {
+  if ((millis() - time_checker_) > timeout) {
       //Call ErrorHandler due Timeout
       last_error = ErrorCode::Timeout;
       (*callers_[max_commands])(SCPI_C(), SCPI_P(), interface);
