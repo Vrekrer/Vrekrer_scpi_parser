@@ -40,7 +40,7 @@ void loop()
 }
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Vrekrer,SCPI Error Handling Example,#00,v0.4"));
+  interface.println(F("Vrekrer,SCPI Error Handling Example,#00,v0.4.2"));
 }
 
 void GetLastEror(SCPI_C commands, SCPI_P parameters, Stream& interface) {

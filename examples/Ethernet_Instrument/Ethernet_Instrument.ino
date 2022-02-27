@@ -1,6 +1,6 @@
-#include "Arduino.h";
-#include "EEPROM.h";
-#include "EtherCard.h";
+#include "Arduino.h"
+#include "EEPROM.h"
+#include "EtherCard.h"
 #include "Vrekrer_scpi_parser.h"
 
 const int eeprom_eth_data_start = 0;
@@ -68,7 +68,7 @@ void loop() {
 /* SCPI FUNCTIONS */
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream &interface) {
-  char IDN[] = "Vrekrer,SCPI Ethernet Instrument,#00,v0.3\n";
+  char IDN[] = "Vrekrer,SCPI Ethernet Instrument,#00,v0.4.2\n";
   PrintToInterface(IDN);
 }
 

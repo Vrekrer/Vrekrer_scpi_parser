@@ -56,7 +56,7 @@ void loop()
 }
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Vrekrer,Arduino SCPI Dimmer,#00,v0.4"));
+  interface.println(F("Vrekrer,Arduino SCPI Dimmer,#00,v0.4.2"));
 }
 
 void SetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
