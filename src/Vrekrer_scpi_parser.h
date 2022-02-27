@@ -102,6 +102,9 @@ typedef SCPI_Parameters SCPI_P;
 ///Void template used with SCPI_Parser::RegisterCommand.
 typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
 
+/// Integer size used for hashes.
+typedef SCPI_HASH_TYPE scpi_hash_t;
+
 /*!
   Main class of the Vrekrer_SCPI_Parser library.
 */
@@ -145,13 +148,13 @@ class SCPI_Parser {
   //Prints registered tokens and command hashes to the serial interface
   void PrintDebugInfo();
   ///Magic number used for hashing the commands
-  SCPI_HASH_TYPE hash_magic_number = 37;
+  scpi_hash_t hash_magic_number = 37;
   
  protected:
   //Add a token to the tokens' storage
   void AddToken_(char* token);
   //Get a hash from a command
-  SCPI_HASH_TYPE GetCommandCode_(SCPI_Commands& commands);
+  scpi_hash_t GetCommandCode_(SCPI_Commands& commands);
   //Number of stored tokens
   uint8_t tokens_size_ = 0;
   //Storage for tokens
@@ -159,11 +162,11 @@ class SCPI_Parser {
   //Number of registered commands
   uint8_t codes_size_ = 0;
   //Registered commands' hash storage
-  SCPI_HASH_TYPE valid_codes_[SCPI_MAX_COMMANDS];
+  scpi_hash_t valid_codes_[SCPI_MAX_COMMANDS];
   //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
   //Branch's hash used when calculating unique codes (0 for root)
-  SCPI_HASH_TYPE tree_code_ = 0;
+  scpi_hash_t tree_code_ = 0;
   //Message buffer.
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message

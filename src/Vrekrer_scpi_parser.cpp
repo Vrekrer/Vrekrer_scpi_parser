@@ -152,8 +152,8 @@ void SCPI_Parser::AddToken_(char *token) {
  The hash is calculated including the TreeBase hash.  
  @see SetCommandTreeBase
 */
-SCPI_HASH_TYPE SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
-  SCPI_HASH_TYPE code;
+scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
+  scpi_hash_t code;
   if (tree_code_) {
     code = tree_code_;
   } else {
@@ -266,7 +266,7 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
-  SCPI_HASH_TYPE code = this->GetCommandCode_(command_tokens);
+  scpi_hash_t code = this->GetCommandCode_(command_tokens);
   valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
@@ -329,7 +329,7 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
     tree_code_ = 0;
     SCPI_Commands commands(message);
     SCPI_Parameters parameters(commands.not_processed_message);
-    SCPI_HASH_TYPE code = this->GetCommandCode_(commands);
+    scpi_hash_t code = this->GetCommandCode_(commands);
     uint8_t i;
     for (i = 0; i < codes_size_; i++)
       if (valid_codes_[i] == code) {
