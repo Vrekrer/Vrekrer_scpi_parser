@@ -22,16 +22,6 @@ Header file.
   #define SCPI_MAX_COMMANDS 20
 #endif
 
-/// Length of the message buffer.
-#ifndef SCPI_BUFFER_LENGTH
-  #define SCPI_BUFFER_LENGTH 64
-#endif
-
-/// Timeout, in miliseconds, for GetMessage and ProcessInput.
-#ifndef SCPI_TIMEOUT
-  #define SCPI_TIMEOUT 10
-#endif
-
 /// Integer size used for hashes.
 #ifndef SCPI_HASH_TYPE
   #define SCPI_HASH_TYPE uint8_t
@@ -171,8 +161,6 @@ class SCPI_Parser {
   scpi_hash_t hash_magic_number = 37;
   
  protected:
-  //Timeout, in miliseconds, for GetMessage and ProcessInput.
-  const int timeout = SCPI_TIMEOUT;
   //Max number of valid tokens.
   const uint8_t max_tokens = SCPI_MAX_TOKENS;
   //Max number of registered commands.
@@ -197,13 +185,16 @@ class SCPI_Parser {
 
   //Length of the readed message
   uint8_t message_length_ = 0;
-  //Varible used for checking timeout errors
-  unsigned long time_checker_;
 
   //Length of the message buffer.
   uint8_t buffer_length;
   //Message buffer.
   char *msg_buffer_;
+
+  //Timeout, in miliseconds, for GetMessage and ProcessInput.
+  unsigned long timeout = 10;
+  //Varible used for checking timeout errors
+  unsigned long time_checker_;
 };
 
 #endif //VREKRER_SCPI_PARSER_H_
