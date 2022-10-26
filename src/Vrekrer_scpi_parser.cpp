@@ -351,14 +351,14 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
     uint8_t i;
     for (i = 0; i < codes_size_; i++)
       if (valid_codes_[i] == code) {
-        (*callers_[i])(commands, parameters, interface);
+        callers_[i](commands, parameters, interface);
         break;
       }
     if (i==codes_size_) {
       //code not found in valid_codes_
       //Call ErrorHandler UnknownCommand
       last_error = ErrorCode::UnknownCommand;
-      (*callers_[max_commands])(commands, parameters, interface);
+      callers_[max_commands](commands, parameters, interface);
     }
     message = multicomands;
   }
@@ -399,7 +399,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     if (message_length_ >= buffer_length){
       //Call ErrorHandler due BufferOverflow
       last_error = ErrorCode::BufferOverflow;
-      (*callers_[max_commands])(SCPI_C(), SCPI_P(), interface);
+      callers_[max_commands](SCPI_C(), SCPI_P(), interface);
       message_length_ = 0;
       return NULL;
     }
@@ -422,7 +422,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
   if ((millis() - time_checker_) > timeout) {
       //Call ErrorHandler due Timeout
       last_error = ErrorCode::Timeout;
-      (*callers_[max_commands])(SCPI_C(), SCPI_P(), interface);
+      callers_[max_commands](SCPI_C(), SCPI_P(), interface);
       message_length_ = 0;
       return NULL;
   }

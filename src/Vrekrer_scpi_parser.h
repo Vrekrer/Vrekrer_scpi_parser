@@ -91,7 +91,7 @@ typedef SCPI_Commands SCPI_C;
 typedef SCPI_Parameters SCPI_P;
 
 ///Void template used with SCPI_Parser::RegisterCommand.
-typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
+using SCPI_caller_t = std::function<void(SCPI_C commands, SCPI_P parameters, Stream &interface)>;
 
 /// Integer size used for hashes.
 typedef SCPI_HASH_TYPE scpi_hash_t;
