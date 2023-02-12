@@ -68,8 +68,8 @@ void loop() {
 /* SCPI FUNCTIONS */
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream &interface) {
-  char IDN[] = "Vrekrer,SCPI Ethernet Instrument,#00,v0.4.2\n";
-  PrintToInterface(IDN);
+  char IDN[] = "Vrekrer,SCPI Ethernet Instrument,#0," VREKRER_SCPI_VERSION "\n";
+  interface.print(IDN);
 }
 
 void SetIP(SCPI_C commands, SCPI_P parameters, Stream &interface) {

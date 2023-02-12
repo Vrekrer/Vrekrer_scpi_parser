@@ -76,9 +76,8 @@ void loop()
 }
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  //*IDN?
-  // Returns the instrument's identification string
-  interface.println(F("Vrekrer,Arduino Numeric suffixes example,#00,v0.4.3"));
+    interface.println(F("Vrekrer,SCPI Numeric suffixes example,#00," 
+                        VREKRER_SCPI_VERSION));
 }
 
 void QueryDigital_Input(SCPI_C commands, SCPI_P parameters, Stream& interface) {

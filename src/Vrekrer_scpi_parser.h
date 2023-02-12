@@ -6,6 +6,8 @@ Header file.
 #ifndef VREKRER_SCPI_PARSER_H_
 #define VREKRER_SCPI_PARSER_H_
 
+#define VREKRER_SCPI_VERSION "v0.4.3"
+
 
 /// Max branch size of the command tree and max number of parameters.
 #ifndef SCPI_ARRAY_SYZE

@@ -56,7 +56,9 @@ void loop()
 }
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Vrekrer,Arduino SCPI Dimmer,#00,v0.4.2"));
+  interface.println(F("Vrekrer,SCPI Dimmer,#00," VREKRER_SCPI_VERSION));
+  //*IDN? Suggested return string should be in the following format:
+  // "<vendor>,<model>,<serial number>,<firmware>"
 }
 
 void SetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {

@@ -56,7 +56,7 @@ void loop()
 }
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println(F("Vrekrer,Hash check example,#00,v0.4.2"));
+  interface.println(F("Vrekrer,Hash check example,#00," VREKRER_SCPI_VERSION));
 }
 
 void DoNothing(SCPI_C commands, SCPI_P parameters, Stream& interface) {
