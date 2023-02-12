@@ -29,11 +29,6 @@ Header file.
   #define SCPI_BUFFER_LENGTH 64
 #endif
 
-/// Timeout, in miliseconds, for GetMessage and ProcessInput.
-#ifndef SCPI_TIMEOUT
-  #define SCPI_TIMEOUT 10
-#endif
-
 /// Integer size used for hashes.
 #ifndef SCPI_HASH_TYPE
   #define SCPI_HASH_TYPE uint8_t
@@ -156,8 +151,6 @@ class SCPI_Parser {
  protected:
   //Length of the message buffer.
   const uint8_t buffer_length = SCPI_BUFFER_LENGTH;
-  //Timeout, in miliseconds, for GetMessage and ProcessInput.
-  const int timeout = SCPI_TIMEOUT;
   //Max number of valid tokens.
   const uint8_t max_tokens = SCPI_MAX_TOKENS;
   //Max number of registered commands.
@@ -183,6 +176,8 @@ class SCPI_Parser {
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message
   uint8_t message_length_ = 0;
+  //Timeout, in miliseconds, for GetMessage and ProcessInput.
+  unsigned long timeout = 10;
   //Varible used for checking timeout errors
   unsigned long time_checker_;
 };
