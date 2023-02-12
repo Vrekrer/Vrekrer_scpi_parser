@@ -113,8 +113,6 @@ void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
 
 // ## SCPI_Registered_Commands member functions. ##
 
-SCPI_Default_Config scpi_default_config;
-
 /*!
  SCPI_Parser constructor.
 
@@ -122,22 +120,6 @@ SCPI_Default_Config scpi_default_config;
   ``SCPI_Parser my_instrument``;
 */
 SCPI_Parser::SCPI_Parser(){
-  msg_buffer_ = scpi_default_config.message_buffer;
-  buffer_length = 64;
-  callers_[max_commands] = &DefaultErrorHandler;
-}
-
-/*!
- SCPI_Parser customizable constructor.
-
- Example:  
-  ``mesage_buffer = SCPI_Message_Buffer<64>();``
-  ``SCPI_Parser my_instrument();``
-  ``
-*/
-SCPI_Parser::SCPI_Parser(SCPI_Message_Buffer_ABC mesage_buffer){
-  msg_buffer_ = mesage_buffer.data;
-  buffer_length = mesage_buffer.size;
   callers_[max_commands] = &DefaultErrorHandler;
 }
 

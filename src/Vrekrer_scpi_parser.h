@@ -106,23 +106,6 @@ typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
 /// Integer size used for hashes.
 typedef SCPI_HASH_TYPE scpi_hash_t;
 
-class SCPI_Default_Config {
-  public:
-    char message_buffer[64];
-};
-
-class SCPI_Message_Buffer_ABC{
-  public:
-    size_t size;
-    char data[0];
-};
-template<int buffer_length>
-class SCPI_Message_Buffer : public SCPI_Message_Buffer_ABC{
-  public:
-    size_t size = buffer_length;
-    char data[buffer_length];
-};
-
 /*!
   Main class of the Vrekrer_SCPI_Parser library.
 */
@@ -130,8 +113,6 @@ class SCPI_Parser {
  public:
   //Constructor
   SCPI_Parser();
-  //Advanced constructor 
-  SCPI_Parser(SCPI_Message_Buffer_ABC message_buffer);
   //Change the TreeBase for the next RegisterCommand calls
   void SetCommandTreeBase(char* tree_base);
   //SetCommandTreeBase version with RAM string support
@@ -171,6 +152,8 @@ class SCPI_Parser {
   scpi_hash_t hash_magic_number = 37;
   
  protected:
+  //Length of the message buffer.
+  const uint8_t buffer_length = SCPI_BUFFER_LENGTH;
   //Timeout, in miliseconds, for GetMessage and ProcessInput.
   const int timeout = SCPI_TIMEOUT;
   //Max number of valid tokens.
@@ -194,16 +177,12 @@ class SCPI_Parser {
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
   //Branch's hash used when calculating unique codes (0 for root)
   scpi_hash_t tree_code_ = 0;
-
+  //Message buffer.
+  char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message
   uint8_t message_length_ = 0;
   //Varible used for checking timeout errors
   unsigned long time_checker_;
-
-  //Length of the message buffer.
-  uint8_t buffer_length;
-  //Message buffer.
-  char *msg_buffer_;
 };
 
 #endif //VREKRER_SCPI_PARSER_H_
