@@ -1,2 +1,2 @@
-// All the code is in the header file.
-// This allows the user to configure options with #define directives
+// All the implementation code is in the header file 
+// This allows Arduino IDE users to configure options with #define directives 
