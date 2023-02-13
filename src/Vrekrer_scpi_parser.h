@@ -160,7 +160,7 @@ class SCPI_Parser {
   bool command_overflow_error = false;
   //Token storage overflow error
   bool token_overflow_error = false;
-  //Branch storage overflow error
+  //Branch (SCPI_Commands) storage overflow error
   bool branch_overflow_error = false;
 
   //Add a token to the tokens' storage

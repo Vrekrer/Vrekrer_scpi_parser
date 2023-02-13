@@ -436,6 +436,8 @@ void SCPI_Parser::PrintDebugInfo() {
   Serial.print(F("Max command tree branches: "));
   Serial.print(SCPI_ARRAY_SYZE);
   Serial.println(F(" (SCPI_ARRAY_SYZE)"));
+  if (branch_overflow_error) 
+    Serial.println(F(" **ERROR** Max branch size exceeded."));
   Serial.print(F("Max number of parameters: "));
   Serial.print(SCPI_ARRAY_SYZE);
   Serial.println(F(" (SCPI_ARRAY_SYZE)"));
@@ -449,6 +451,8 @@ void SCPI_Parser::PrintDebugInfo() {
   Serial.print(F(" / "));
   Serial.print(max_tokens);
   Serial.println(F(" (SCPI_MAX_TOKENS)"));
+  if (token_overflow_error) 
+    Serial.println(F(" **ERROR** Max tokens exceeded."));
   for (uint8_t i = 0; i < tokens_size_; i++) {
     Serial.print(F("  "));
     Serial.print(i+1);
@@ -464,6 +468,8 @@ void SCPI_Parser::PrintDebugInfo() {
   Serial.print(F(" / "));
   Serial.print(max_commands);
   Serial.println(F(" (SCPI_MAX_COMMANDS)"));
+  if (command_overflow_error) 
+    Serial.println(F(" **ERROR** Max commands exceeded."));
   Serial.println(F("  #\tHash\t\tHandler"));
   for (uint8_t i = 0; i < codes_size_; i++) {
     Serial.print(F("  "));
@@ -482,7 +488,7 @@ void SCPI_Parser::PrintDebugInfo() {
     Serial.println();
     Serial.flush();
   }
-  if (hash_crash) Serial.println(F("!! Hash crashes found!"));
+  if (hash_crash) Serial.println(F(" **ERROR** Hash crashes found. (!!)"));
   
   Serial.println();
   Serial.println(F("HASH Configuration:"));
