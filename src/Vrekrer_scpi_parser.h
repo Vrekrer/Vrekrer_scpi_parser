@@ -156,7 +156,11 @@ class SCPI_Parser {
   const uint8_t max_tokens = SCPI_MAX_TOKENS;
   //Max number of registered commands.
   const uint8_t max_commands = SCPI_MAX_COMMANDS;
-
+  //Command storage overflow error
+  bool command_overflow_error = false;
+  //Token storage overflow error
+  bool token_overflow_error = false;
+  
   //Add a token to the tokens' storage
   void AddToken_(char* token);
   //Get a hash from a command
@@ -325,6 +329,8 @@ void SCPI_Parser::AddToken_(char *token) {
       stored_token[token_size] = '\0';
       tokens_[tokens_size_] = stored_token;
       tokens_size_++;
+    } else {
+      token_overflow_error = true;
     }
   }
 }
@@ -452,10 +458,14 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
-  scpi_hash_t code = this->GetCommandCode_(command_tokens);
-  valid_codes_[codes_size_] = code;
-  callers_[codes_size_] = caller;
-  codes_size_++;
+  if (codes_size_ < max_commands) {
+    scpi_hash_t code = this->GetCommandCode_(command_tokens);
+    valid_codes_[codes_size_] = code;
+    callers_[codes_size_] = caller;
+    codes_size_++;
+  } else {
+    command_overflow_error = true;
+  }
 }
 
 /*!
