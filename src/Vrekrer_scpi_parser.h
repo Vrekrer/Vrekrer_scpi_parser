@@ -58,8 +58,8 @@ class SCPI_String_Array {
   char* Last();                        //Returns the last element of the array
   uint8_t Size();                      //Array size
   bool overflow_error = false;         //Storage overflow error
- protected:
   const uint8_t storage_size = SCPI_ARRAY_SYZE; //Max size of the array 
+ protected:
   uint8_t size_ = 0;              //Internal array size
   char* values_[SCPI_ARRAY_SYZE]; //Storage of the strings
 };
@@ -160,7 +160,9 @@ class SCPI_Parser {
   bool command_overflow_error = false;
   //Token storage overflow error
   bool token_overflow_error = false;
-  
+  //Branch storage overflow error
+  bool branch_overflow_error = false;
+
   //Add a token to the tokens' storage
   void AddToken_(char* token);
   //Get a hash from a command
@@ -175,8 +177,10 @@ class SCPI_Parser {
   scpi_hash_t valid_codes_[SCPI_MAX_COMMANDS];
   //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
-  //Branch's hash used when calculating unique codes (0 for root)
+  //TreeBase branch's hash used when calculating hashes (0 for root)
   scpi_hash_t tree_code_ = 0;
+  //TreeBase branch's length (0 for root)
+  uint8_t tree_length_ = 0;
   //Message buffer.
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message

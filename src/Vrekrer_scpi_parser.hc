@@ -235,8 +235,11 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
       AddToken_(tree_tokens[i]);
     tree_code_ = 0;
     tree_code_ = this->GetCommandCode_(tree_tokens);
+    tree_length_ = tree_tokens.Size();
+    if (tree_tokens.overflow_error) branch_overflow_error = true;
   } else {
     tree_code_ = 0;
+    tree_length_ = 0;
   }
 }
 
@@ -270,6 +273,9 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 */
 void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
+  if ((tree_length_ + command_tokens.Size()) > command_tokens.storage_size) {
+    branch_overflow_error = true;
+  }
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
   if (codes_size_ < max_commands) {
