@@ -273,9 +273,10 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 */
 void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   SCPI_Commands command_tokens(command);
-  if ((tree_length_ + command_tokens.Size()) > command_tokens.storage_size) {
-    branch_overflow_error = true;
-  }
+  bool invalid = command_tokens.overflow_error;
+  invalid |= (tree_length_+command_tokens.Size()) > command_tokens.storage_size;
+  branch_overflow_error |= invalid;
+  //TODO do not assing a code for invalid commands
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
   if (codes_size_ < max_commands) {
