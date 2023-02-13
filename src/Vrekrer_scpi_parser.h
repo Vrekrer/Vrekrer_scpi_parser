@@ -600,20 +600,65 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
 void SCPI_Parser::PrintDebugInfo() {
   Serial.println(F("*** DEBUG INFO ***"));
   Serial.println();
-  Serial.print(F("TOKENS :"));
-  Serial.println(tokens_size_);
+  Serial.print(F("Max command tree branches: "));
+  Serial.print(SCPI_ARRAY_SYZE);
+  Serial.println(F(" (SCPI_ARRAY_SYZE)"));
+  Serial.print(F("Max number of parameters: "));
+  Serial.print(SCPI_ARRAY_SYZE);
+  Serial.println(F(" (SCPI_ARRAY_SYZE)"));
+  Serial.print(F("Message buffer size: "));
+  Serial.print(buffer_length);
+  Serial.println(F(" (SCPI_BUFFER_LENGTH)"));
+  Serial.println();
+  
+  Serial.print(F("TOKENS : "));
+  Serial.print(tokens_size_);
+  Serial.print(F(" / "));
+  Serial.print(max_tokens);
+  Serial.println(F(" (SCPI_MAX_TOKENS)"));
   for (uint8_t i = 0; i < tokens_size_; i++) {
     Serial.print(F("  "));
+    Serial.print(i+1);
+    Serial.print(F(":\t"));
     Serial.println(String(tokens_[i]));
     Serial.flush();
   }
   Serial.println();
-  Serial.println(F("VALID CODES :"));
+  
+  bool hash_crash = false;
+  Serial.print(F("VALID CODES : "));
+  Serial.print(codes_size_);
+  Serial.print(F(" / "));
+  Serial.print(max_commands);
+  Serial.println(F(" (SCPI_MAX_COMMANDS)"));
+  Serial.println(F("  #\tHash\t\tHandler"));
   for (uint8_t i = 0; i < codes_size_; i++) {
     Serial.print(F("  "));
-    Serial.println(valid_codes_[i]);
+    Serial.print(i+1);
+    Serial.print(F(":\t"));
+    Serial.print(valid_codes_[i], HEX);
+    for (uint8_t j = 0; j < i; j++) {
+      if (valid_codes_[i] == valid_codes_[j]) {
+        Serial.print("!!");
+        hash_crash = true;
+        break;
+      }
+    }
+    Serial.print(F("\t\t0x"));
+    Serial.print(long(callers_[i]), HEX);
+    Serial.println();
     Serial.flush();
   }
+  if (hash_crash) Serial.println(F("!! Hash crashes found!"));
+  
+  Serial.println();
+  Serial.println(F("HASH Configuration:"));
+  Serial.print(F("  Hash size: "));
+  Serial.print(sizeof(scpi_hash_t)*8);
+  Serial.println(F("bits (SCPI_HASH_TYPE)"));
+  Serial.print(F("  Hash magic number: "));
+  Serial.println(hash_magic_number);
+
   Serial.println();
   Serial.println(F("*******************"));
   Serial.println();
