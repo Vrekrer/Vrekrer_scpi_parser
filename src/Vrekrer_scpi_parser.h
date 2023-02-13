@@ -57,6 +57,7 @@ class SCPI_String_Array {
   char* First();                       //Returns the first element of the array
   char* Last();                        //Returns the last element of the array
   uint8_t Size();                      //Array size
+  bool overflow_error = false;         //Storage overflow error
  protected:
   const uint8_t storage_size = SCPI_ARRAY_SYZE; //Max size of the array 
   uint8_t size_ = 0;              //Internal array size
@@ -195,6 +196,8 @@ void SCPI_String_Array::Append(char* value) {
   if (size_ < storage_size) {
     values_[size_] = value;
     size_++;
+  } else {
+    overflow_error = true;
   }
 }
 
