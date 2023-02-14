@@ -163,7 +163,7 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
   if (tree_code_) {
     code = tree_code_;
   } else {
-    code = 7; //Magic hash offset
+    code = hash_magic_offset;
   }
   bool isQuery = false;
 
@@ -214,10 +214,12 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
         break;
       }
     }
-    if (!isToken) return 255;
+    //A header does not match with any registered token.
+    //Thus, the command is not valid.
+    if (!isToken) return 0;
   }
   if (isQuery) {
-    code *= 37;
+    code *= hash_magic_number;
     code -= 1;
   }
   return code;

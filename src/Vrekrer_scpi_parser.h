@@ -148,6 +148,8 @@ class SCPI_Parser {
   void PrintDebugInfo();
   ///Magic number used for hashing the commands
   scpi_hash_t hash_magic_number = 37;
+  ///Magic offset used for hashing the commands
+  scpi_hash_t hash_magic_offset = 7;
   
  protected:
   //Length of the message buffer.
