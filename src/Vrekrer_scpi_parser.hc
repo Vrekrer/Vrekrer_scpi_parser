@@ -6,45 +6,35 @@
 
 ///Add indexing capability.
 char* SCPI_String_Array::operator[](const uint8_t index) {
+  if (index >= size_) return NULL; //Invalid index
   return values_[index];
 }
 
 ///Append new string (LIFO stack Push).
 void SCPI_String_Array::Append(char* value) {
-  if (size_ < storage_size) {
-    values_[size_] = value;
-    size_++;
-  } else {
-    overflow_error = true;
-  }
+  overflow_error = (size_ >= storage_size);
+  if (overflow_error) return;
+  values_[size_] = value;
+  size_++;
 }
 
 ///LIFO stack Pop
 char* SCPI_String_Array::Pop() {
-  if (size_ > 0) {
-    size_--;
-    return values_[size_];
-  } else {
-    return NULL;
-  }
+  if (size_ == 0) return NULL; //Empty array
+  size_--;
+  return values_[size_];
 }
 
 ///Returns the first element of the array
 char* SCPI_String_Array::First() {
-  if (size_ > 0) {
-    return values_[0];
-  } else {
-    return NULL;
-  }
+  if (size_ == 0) return NULL; //Empty array
+  return values_[0];
 }
 
 ///Returns the last element of the array
 char* SCPI_String_Array::Last() {
-  if (size_ > 0) {
-    return values_[size_ - 1];
-  } else {
-    return NULL;
-  }
+  if (size_ == 0) return NULL; //Empty array
+  return values_[size_ - 1];
 }
 
 ///Array size
