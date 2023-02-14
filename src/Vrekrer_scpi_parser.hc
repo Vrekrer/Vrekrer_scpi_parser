@@ -119,24 +119,21 @@ SCPI_Parser::SCPI_Parser(){
 
 ///Add a token to the tokens' storage
 void SCPI_Parser::AddToken_(char *token) {
-  size_t token_size = strlen(token);
-  bool isQuery = (token[token_size - 1] == '?');
-  if (isQuery) token_size--;
-
-  bool allready_added = false;
-  for (uint8_t i = 0; i < tokens_size_; i++)
-    allready_added ^= (strncmp(token, tokens_[i], token_size) == 0);
-  if (!allready_added) {
-    if (tokens_size_ < max_tokens) {
-      char *stored_token = new char [token_size + 1];
-      strncpy(stored_token, token, token_size);
-      stored_token[token_size] = '\0';
-      tokens_[tokens_size_] = stored_token;
-      tokens_size_++;
-    } else {
-      token_overflow_error = true;
-    }
+  if (tokens_size_ >= max_tokens) {
+    token_overflow_error = true;
+    return;
   }
+  size_t token_size = strlen(token);
+  //Remove query symbols
+  if (token[token_size - 1] == '?') token_size--;
+  for (uint8_t i = 0; i < tokens_size_; i++)
+    //Check if the token is allready added
+    if (strncmp(token, tokens_[i], token_size) == 0) return;
+  char *stored_token = new char [token_size + 1];
+  strncpy(stored_token, token, token_size);
+  stored_token[token_size] = '\0';
+  tokens_[tokens_size_] = stored_token;
+  tokens_size_++;
 }
 
 /*!
