@@ -146,27 +146,21 @@ void SCPI_Parser::AddToken_(char *token) {
  @see SetCommandTreeBase
 */
 scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
+  if (tree_code_ == invalid_hash) return invalid_hash;
   scpi_hash_t code;
-  if (tree_code_) {
-    code = tree_code_;
-  } else {
-    code = hash_magic_offset;
-  }
-  bool isQuery = false;
-
+  code = (tree_code_ == 0) ? hash_magic_offset : tree_code_;
   //Loop all keywords in the command
   for (uint8_t i = 0; i < commands.Size(); i++) {
     //Get keywords's length
     size_t header_length = strlen(commands[i]);
-    
-    //For the last keywords test if it is a query
-    //and remove '?' from the keywords's length if needed.
+    //For the last keyword remove the query symbol if needed
+    bool is_query = false;
     if (i == commands.Size() - 1) {
-      isQuery = (commands[i][header_length - 1] == '?');
-      if (isQuery) header_length--;
+      is_query = (commands[i][header_length - 1] == '?');
+      if (is_query) header_length--;
     }
 
-    bool isToken;
+    //Loop over all the known tokens
     for (uint8_t j = 0; j < tokens_size_; j++) {
       //Get the token's short and long lengths
       size_t short_length = 0;
@@ -174,40 +168,42 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       size_t long_length = strlen(tokens_[j]);
 
       //If the token allows numeric suffixes
-      //remove the trailing digits from the header
+      //remove the trailing digits from the keyword
       if ( (tokens_[j][long_length - 1] == '#')
-         && (commands[i][header_length - 1] != '#') ) {
+         and (commands[i][header_length - 1] != '#') ) {
         long_length--;
         while (isdigit(commands[i][header_length - 1])) header_length--;
       }
 
-      //Test if the header match with the token
-      isToken = true;
+      //Test if the keyword match with the token
+      //otherwise test next token
       if (header_length == short_length) {
         for (uint8_t k  = 0; k < short_length; k++)
-          isToken &= (toupper(commands[i][k]) == tokens_[j][k]);
+          if (not (toupper(commands[i][k]) == tokens_[j][k]))
+            goto no_header_token_match;
       } else if (header_length == long_length) {
         for (uint8_t k  = 0; k < long_length; k++)
-          isToken &= (toupper(commands[i][k]) == toupper(tokens_[j][k]));
+          if (not (toupper(commands[i][k]) == toupper(tokens_[j][k])))
+            goto no_header_token_match;
       } else {
-        isToken = false;
+            goto no_header_token_match;
       }
 
-      //We use the token number j for hashing
+      //Apply the hashing step using token number j
       //hash(i) = hash(i - 1) * hash_magic_number + j
-      if (isToken) {
-        code *= hash_magic_number;
-        code += j;
-        break;
-      }
+      code *= hash_magic_number;
+      code += j;
+      break;
+
+      no_header_token_match:;
+      //If the keyword does not match any token return unknown_hash
+      if (j == (tokens_size_ - 1)) return unknown_hash;
     }
-    //A header does not match with any registered token.
-    //Thus, the command is not valid.
-    if (!isToken) return 0;
-  }
-  if (isQuery) {
-    code *= hash_magic_number;
-    code -= 1;
+    //If last keyword is a query, add a hashing step
+    if (is_query) {
+      code *= hash_magic_number;
+      code -= 1;
+    }
   }
   return code;
 }

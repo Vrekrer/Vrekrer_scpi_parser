@@ -164,6 +164,10 @@ class SCPI_Parser {
   bool token_overflow_error = false;
   //Branch (SCPI_Commands) storage overflow error
   bool branch_overflow_error = false;
+  //Hash result for unknown commands
+  const scpi_hash_t unknown_hash = 0;
+  //Hash reserved for invalid commands
+  const scpi_hash_t invalid_hash = 1;
 
   //Add a token to the tokens' storage
   void AddToken_(char* token);
