@@ -214,18 +214,21 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
         An empty string ``""`` sets the TreeBase to root.
 */
 void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
-  if (strlen(tree_base) > 0) {
-    SCPI_Commands tree_tokens(tree_base);
-    for (uint8_t i = 0; i < tree_tokens.Size(); i++)
-      AddToken_(tree_tokens[i]);
-    tree_code_ = 0;
-    tree_code_ = this->GetCommandCode_(tree_tokens);
-    tree_length_ = tree_tokens.Size();
-    if (tree_tokens.overflow_error) branch_overflow_error = true;
-  } else {
+  SCPI_Commands tree_tokens(tree_base);
+  if (tree_tokens.Size() == 0) {
     tree_code_ = 0;
     tree_length_ = 0;
+    return;
   }
+  for (uint8_t i = 0; i < tree_tokens.Size(); i++)
+    AddToken_(tree_tokens[i]);
+  tree_code_ = 0;
+  tree_code_ = this->GetCommandCode_(tree_tokens);
+  tree_length_ = tree_tokens.Size();
+  if (tree_tokens.overflow_error) {
+    branch_overflow_error = true;
+    tree_code_ = invalid_hash;
+  } 
 }
 
 /*!
