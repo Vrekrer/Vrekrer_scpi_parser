@@ -93,16 +93,16 @@ class SCPI_Parameters : public SCPI_String_Array {
 };
 
 ///Alias of SCPI_Commands.
-typedef SCPI_Commands SCPI_C;
+using SCPI_C = SCPI_Commands;
 
 ///Alias of SCPI_Parameters.
-typedef SCPI_Parameters SCPI_P;
+using SCPI_P = SCPI_Parameters;
 
 ///Void template used with SCPI_Parser::RegisterCommand.
-typedef void (*SCPI_caller_t)(SCPI_Commands, SCPI_Parameters, Stream&);
+using SCPI_caller_t = void(*)(SCPI_Commands, SCPI_Parameters, Stream&); 
 
 /// Integer size used for hashes.
-typedef SCPI_HASH_TYPE scpi_hash_t;
+using scpi_hash_t = SCPI_HASH_TYPE;
 
 /*!
   Main class of the Vrekrer_SCPI_Parser library.
@@ -141,7 +141,7 @@ class SCPI_Parser {
   //Process a message and execute it a valid command is found
   void Execute(char* message, Stream& interface);
   //Gets a message from a Stream interface and execute it
-  void ProcessInput(Stream &interface, const char* term_chars);
+  void ProcessInput(Stream& interface, const char* term_chars);
   //Gets a message from a Stream interface
   char* GetMessage(Stream& interface, const char* term_chars);
   //Prints registered tokens and command hashes to the serial interface
