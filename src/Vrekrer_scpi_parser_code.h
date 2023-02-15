@@ -149,6 +149,7 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
   if (tree_code_ == invalid_hash) return invalid_hash;
   scpi_hash_t code;
   code = (tree_code_ == 0) ? hash_magic_offset : tree_code_;
+  if (commands.Size()==0) return unknown_hash;
   //Loop all keywords in the command
   for (uint8_t i = 0; i < commands.Size(); i++) {
     //Get keywords's length
@@ -265,13 +266,18 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
     return;
   }
   SCPI_Commands command_tokens(command);
-  bool invalid = command_tokens.overflow_error;
-  invalid |= (tree_length_+command_tokens.Size()) > command_tokens.storage_size;
-  branch_overflow_error |= invalid;
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
   scpi_hash_t code = this->GetCommandCode_(command_tokens);
-  valid_codes_[codes_size_] = invalid ? 1 : code;
+  
+  //Check for errors
+  if (code == unknown_hash) code = invalid_hash;
+  bool overflow_error = command_tokens.overflow_error;
+  overflow_error |= (tree_length_+command_tokens.Size()) > command_tokens.storage_size;
+  branch_overflow_error |= overflow_error;
+  if (overflow_error) code = invalid_hash;
+
+  valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
 }
