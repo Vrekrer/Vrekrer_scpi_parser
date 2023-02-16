@@ -141,7 +141,8 @@ void SCPI_Parser::AddToken_(char *token) {
  @param commands  Keywords of a command
  @return hash
 
- Return 0 if the command contains keywords not registered as tokens.  
+ Return ``unknown_hash`` if the command contains  
+ keywords not registered as tokens.  
  The hash is calculated including the TreeBase hash.  
  @see SetCommandTreeBase
 */
@@ -338,21 +339,20 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
 
     tree_code_ = 0;
     SCPI_Commands commands(message);
+    message = multicomands;
     SCPI_Parameters parameters(commands.not_processed_message);
     scpi_hash_t code = this->GetCommandCode_(commands);
-    uint8_t i;
-    for (i = 0; i < codes_size_; i++)
-      if (valid_codes_[i] == code) {
-        (*callers_[i])(commands, parameters, interface);
-        break;
-      }
-    if (i==codes_size_) {
-      //code not found in valid_codes_
+    if (code == unknown_hash) {
       //Call ErrorHandler UnknownCommand
       last_error = ErrorCode::UnknownCommand;
       (*callers_[max_commands])(commands, parameters, interface);
+      continue;
     }
-    message = multicomands;
+    for (uint8_t i = 0; i < codes_size_; i++)
+      if (valid_codes_[i] == code) {
+        (*callers_[i])(commands, parameters, interface);
+        break;
+      }  
   }
 }
 
