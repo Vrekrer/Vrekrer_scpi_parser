@@ -424,75 +424,84 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
 }
 
 ///Prints registered tokens and command hashes to the serial interface
-void SCPI_Parser::PrintDebugInfo() {
-  Serial.println(F("*** DEBUG INFO ***"));
-  Serial.println();
-  Serial.print(F("Max command tree branches: "));
-  Serial.print(SCPI_ARRAY_SYZE);
-  Serial.println(F(" (SCPI_ARRAY_SYZE)"));
+void SCPI_Parser::PrintDebugInfo(Stream& interface) {
+  interface.println(F("*** DEBUG INFO ***\n"));
+  interface.print(F("Max command tree branches: "));
+  interface.print(SCPI_ARRAY_SYZE);
+  interface.println(F(" (SCPI_ARRAY_SYZE)"));
   if (branch_overflow_error) 
-    Serial.println(F(" **ERROR** Max branch size exceeded."));
-  Serial.print(F("Max number of parameters: "));
-  Serial.print(SCPI_ARRAY_SYZE);
-  Serial.println(F(" (SCPI_ARRAY_SYZE)"));
-  Serial.print(F("Message buffer size: "));
-  Serial.print(buffer_length);
-  Serial.println(F(" (SCPI_BUFFER_LENGTH)"));
-  Serial.println();
+    interface.println(F(" **ERROR** Max branch size exceeded."));
+  interface.print(F("Max number of parameters: "));
+  interface.print(SCPI_ARRAY_SYZE);
+  interface.println(F(" (SCPI_ARRAY_SYZE)"));
+  interface.print(F("Message buffer size: "));
+  interface.print(buffer_length);
+  interface.println(F(" (SCPI_BUFFER_LENGTH)\n"));
   
-  Serial.print(F("TOKENS : "));
-  Serial.print(tokens_size_);
-  Serial.print(F(" / "));
-  Serial.print(max_tokens);
-  Serial.println(F(" (SCPI_MAX_TOKENS)"));
+  interface.print(F("TOKENS : "));
+  interface.print(tokens_size_);
+  interface.print(F(" / "));
+  interface.print(max_tokens);
+  interface.println(F(" (SCPI_MAX_TOKENS)"));
   if (token_overflow_error) 
-    Serial.println(F(" **ERROR** Max tokens exceeded."));
+    interface.println(F(" **ERROR** Max tokens exceeded."));
   for (uint8_t i = 0; i < tokens_size_; i++) {
-    Serial.print(F("  "));
-    Serial.print(i+1);
-    Serial.print(F(":\t"));
-    Serial.println(String(tokens_[i]));
-    Serial.flush();
+    interface.print(F("  "));
+    interface.print(i+1);
+    interface.print(F(":\t"));
+    interface.println(String(tokens_[i]));
+    interface.flush();
   }
-  Serial.println();
+  interface.println();
   
   bool hash_crash = false;
-  Serial.print(F("VALID CODES : "));
-  Serial.print(codes_size_);
-  Serial.print(F(" / "));
-  Serial.print(max_commands);
-  Serial.println(F(" (SCPI_MAX_COMMANDS)"));
+  bool unknown_error = false;
+  bool invalid_error = false;
+  interface.print(F("VALID CODES : "));
+  interface.print(codes_size_);
+  interface.print(F(" / "));
+  interface.print(max_commands);
+  interface.println(F(" (SCPI_MAX_COMMANDS)"));
   if (command_overflow_error) 
-    Serial.println(F(" **ERROR** Max commands exceeded."));
-  Serial.println(F("  #\tHash\t\tHandler"));
+    interface.println(F(" **ERROR** Max commands exceeded."));
+  interface.println(F("  #\tHash\t\tHandler"));
   for (uint8_t i = 0; i < codes_size_; i++) {
-    Serial.print(F("  "));
-    Serial.print(i+1);
-    Serial.print(F(":\t"));
-    Serial.print(valid_codes_[i], HEX);
+    interface.print(F("  "));
+    interface.print(i+1);
+    interface.print(F(":\t"));
+    interface.print(valid_codes_[i], HEX);
+    if (valid_codes_[i] == unknown_hash) {
+      interface.print("!*");
+      unknown_error = true;
+      continue;
+    } else if (valid_codes_[i] == invalid_hash) {
+      interface.print("!%");
+      invalid_error = true;
+      continue;
+    }
     for (uint8_t j = 0; j < i; j++) {
       if (valid_codes_[i] == valid_codes_[j]) {
-        Serial.print("!!");
+        interface.print("!!");
         hash_crash = true;
         break;
       }
-    }
-    Serial.print(F("\t\t0x"));
-    Serial.print(long(callers_[i]), HEX);
-    Serial.println();
-    Serial.flush();
+    interface.print(F("\t\t0x"));
+    interface.print(long(callers_[i]), HEX);
+    interface.println();
+    interface.flush();
   }
-  if (hash_crash) Serial.println(F(" **ERROR** Hash crashes found. (!!)"));
-  
-  Serial.println();
-  Serial.println(F("HASH Configuration:"));
-  Serial.print(F("  Hash size: "));
-  Serial.print(sizeof(scpi_hash_t)*8);
-  Serial.println(F("bits (SCPI_HASH_TYPE)"));
-  Serial.print(F("  Hash magic number: "));
-  Serial.println(hash_magic_number);
+  if (unknown_error) interface.println(F(" **ERROR** Tried to register ukwnonk tokens. (!*)"));
+  if (invalid_error) interface.println(F(" **ERROR** Tried to register 
+                                         invalid commands. (!%)"));
+  if (hash_crash) interface.println(F(" **ERROR** Hash crashes found. (!!)"));
 
-  Serial.println();
-  Serial.println(F("*******************"));
-  Serial.println();
+  
+  interface.println(F("\nHASH Configuration:"));
+  interface.print(F("  Hash size: "));
+  interface.print(sizeof(scpi_hash_t)*8);
+  interface.println(F("bits (SCPI_HASH_TYPE)"));
+  interface.print(F("  Hash magic number: "));
+  interface.println(hash_magic_number);
+
+  interface.println(F("\n*******************\n"));
 }
