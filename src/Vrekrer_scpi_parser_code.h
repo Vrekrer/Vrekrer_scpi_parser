@@ -424,7 +424,8 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
 }
 
 ///Prints registered tokens and command hashes to the serial interface
-void SCPI_Parser::PrintDebugInfo(Stream& interface) {
+void SCPI_Parser::PrintDebugInfo(Stream& interface) 
+{
   interface.println(F("*** DEBUG INFO ***\n"));
   interface.print(F("Max command tree branches: "));
   interface.print(SCPI_ARRAY_SYZE);
@@ -471,11 +472,11 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface) {
     interface.print(F(":\t"));
     interface.print(valid_codes_[i], HEX);
     if (valid_codes_[i] == unknown_hash) {
-      interface.print("!*");
+      interface.print(F("!*"));
       unknown_error = true;
       continue;
     } else if (valid_codes_[i] == invalid_hash) {
-      interface.print("!%");
+      interface.print(F("!%"));
       invalid_error = true;
       continue;
     }
@@ -485,15 +486,18 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface) {
         hash_crash = true;
         break;
       }
+    }
     interface.print(F("\t\t0x"));
     interface.print(long(callers_[i]), HEX);
     interface.println();
     interface.flush();
   }
-  if (unknown_error) interface.println(F(" **ERROR** Tried to register ukwnonk tokens. (!*)"));
-  if (invalid_error) interface.println(F(" **ERROR** Tried to register 
-                                         invalid commands. (!%)"));
-  if (hash_crash) interface.println(F(" **ERROR** Hash crashes found. (!!)"));
+  if (unknown_error) 
+    interface.println(F(" **ERROR** Tried to register ukwnonk tokens. (!*)"));
+  if (invalid_error) 
+    interface.println(F(" **ERROR** Tried to register invalid commands. (!%)"));
+  if (hash_crash) 
+    interface.println(F(" **ERROR** Hash crashes found. (!!)"));
 
   
   interface.println(F("\nHASH Configuration:"));
