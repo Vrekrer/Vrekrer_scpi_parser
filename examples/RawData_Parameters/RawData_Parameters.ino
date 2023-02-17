@@ -95,7 +95,7 @@ void SpecialEcho(SCPI_C commands, Stream& interface) {
   //Here we print back to the interface all the recieved chars
   while (true) {
     if (interface.available()) {
-      interface.print(interface.peek());
+      interface.print(char(interface.peek()));
       interface.flush();
       if (interface.read() == '\n') break; //End if a '\n' is recieved
     }
