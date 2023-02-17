@@ -274,7 +274,8 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   //Check for errors
   if (code == unknown_hash) code = invalid_hash;
   bool overflow_error = command_tokens.overflow_error;
-  overflow_error |= (tree_length_+command_tokens.Size()) > command_tokens.storage_size;
+  overflow_error |= (tree_length_+command_tokens.Size()) 
+                    > command_tokens.storage_size;
   branch_overflow_error |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
@@ -301,7 +302,8 @@ void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
  Example:  
   ``my_instrument.RegisterCommand(F("*IDN?"), &Identify);``
 */
-void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, SCPI_caller_t caller) {
+void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command, 
+                                  SCPI_caller_t caller) {
   strcpy_P(msg_buffer_, (const char *) command);
   this->RegisterCommand(msg_buffer_, caller);
 }
@@ -378,7 +380,7 @@ void SCPI_Parser::ProcessInput(Stream& interface, const char* term_chars) {
  the message is returned, otherwise the return is ``NULL``.  
  Subsequent calls to this function continues the message reading.  
  The message is discarded, and the error handler is called if:  
-  A timeout occurs (10 ms without new chars)  
+  A timeout occurs (SCPI_Parser::timeout ms without new chars) (default 10 ms)  
   The message buffer overflows
 */
 char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
@@ -395,6 +397,25 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
       message_length_ = 0;
       return NULL;
     }
+    
+    #if SCPI_MAX_SPECIAL_COMMANDS
+    if ((msg_buffer_[message_length_ - 1] == ' ')){
+      msg_buffer_[message_length_ - 1] =  '\0';
+      tree_code_ = 0;
+      SCPI_Commands commands(msg_buffer_);
+      scpi_hash_t code = this->GetCommandCode_(commands);
+      for (uint8_t i = 0; i < special_codes_size_; i++) 
+        if (valid_special_codes_[i] == code) {
+          (*special_callers_[i])(commands, interface);
+          message_length_ = 0;
+          return msg_buffer_;
+        }
+      //restore original message.
+      msg_buffer_[message_length_ - 1] = ' ';
+      for (uint8_t i = 0; i < commands.Size()+1; i++)
+        commands[i][strlen(commands[i])] = ':';
+    }
+    #endif
 
     //Test for termination chars (end of the message)
     msg_buffer_[message_length_] = '\0';
