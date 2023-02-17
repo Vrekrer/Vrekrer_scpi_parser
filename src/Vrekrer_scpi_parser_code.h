@@ -413,7 +413,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
         }
       //restore original message.
       msg_buffer_[message_length_ - 1] = ' ';
-      for (uint8_t i = 0; i < commands.Size()+1; i++)
+      for (uint8_t i = 0; i < commands.Size()-1; i++)
         commands[i][strlen(commands[i])] = ':';
     }
     #endif
