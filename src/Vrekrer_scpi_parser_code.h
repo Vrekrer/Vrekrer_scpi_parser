@@ -399,7 +399,8 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     }
     
     #if SCPI_MAX_SPECIAL_COMMANDS
-    if ((msg_buffer_[message_length_ - 1] == ' ')){
+    //For the first space only.
+    if (strpbrk(message, " ") == message_length_- 1){
       msg_buffer_[message_length_ - 1] =  '\0';
       tree_code_ = 0;
       SCPI_Commands commands(msg_buffer_);
@@ -414,8 +415,6 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
       msg_buffer_[message_length_ - 1] = ' ';
       for (uint8_t i = 0; i < commands.Size()+1; i++)
         commands[i][strlen(commands[i])] = ':';
-      commands.not_processed_message--;
-      commands.not_processed_message[0] = ' ';
     }
     #endif
 
