@@ -177,14 +177,17 @@ class SCPI_Parser {
   const uint8_t max_tokens = SCPI_MAX_TOKENS;
   //Max number of registered commands.
   const uint8_t max_commands = SCPI_MAX_COMMANDS;
-  //Command storage overflow error
-  bool command_overflow_error = false;
-  //Token storage overflow error
-  bool token_overflow_error = false;
-  //Branch (SCPI_Commands) storage overflow error
-  bool branch_overflow_error = false;
-  //Special command storage overflow error
-  bool special_command_overflow_error = false;
+  //Internal errors container
+  struct internal_errors {
+    //Command storage overflow error
+    bool command_overflow = false;
+    //Token storage overflow error
+    bool token_overflow = false;
+    //Branch (SCPI_Commands) storage overflow error
+    bool branch_overflow = false;
+    //Special command storage overflow error
+    bool special_command_overflow = false;
+  } setup_errors;
   //Hash result for unknown commands
   const scpi_hash_t unknown_hash = 0;
   //Hash reserved for invalid commands

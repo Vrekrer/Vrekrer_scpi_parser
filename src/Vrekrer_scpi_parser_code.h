@@ -22,7 +22,7 @@ SCPI_Parser::SCPI_Parser(){
 ///Add a token to the tokens' storage
 void SCPI_Parser::AddToken_(char *token) {
   if (tokens_size_ >= max_tokens) {
-    token_overflow_error = true;
+    setup_errors::token_overflow = true;
     return;
   }
   size_t token_size = strlen(token);
@@ -130,7 +130,7 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   tree_code_ = this->GetCommandCode_(tree_tokens);
   tree_length_ = tree_tokens.Size();
   if (tree_tokens.overflow_error) {
-    branch_overflow_error = true;
+    setup_errors::branch_overflow = true;
     tree_code_ = invalid_hash;
   } 
 }
@@ -165,7 +165,7 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 */
 void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   if (codes_size_ >= max_commands) {
-    command_overflow_error = true;
+    setup_errors::command_overflow = true;
     return;
   }
   SCPI_Commands command_tokens(command);
@@ -178,7 +178,7 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   bool overflow_error = command_tokens.overflow_error;
   overflow_error |= (tree_length_+command_tokens.Size()) 
                     > command_tokens.storage_size;
-  branch_overflow_error |= overflow_error;
+  setup_errors::overflow_error |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
   valid_codes_[codes_size_] = code;
@@ -356,7 +356,7 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.print(F("Max command tree branches: "));
   interface.print(SCPI_ARRAY_SYZE);
   interface.println(F(" (SCPI_ARRAY_SYZE)"));
-  if (branch_overflow_error) 
+  if (setup_errors::branch_overflow) 
     interface.println(F(" **ERROR** Max branch size exceeded."));
   interface.print(F("Max number of parameters: "));
   interface.print(SCPI_ARRAY_SYZE);
@@ -370,7 +370,7 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.print(F(" / "));
   interface.print(max_tokens);
   interface.println(F(" (SCPI_MAX_TOKENS)"));
-  if (token_overflow_error) 
+  if (setup_errors::token_overflow) 
     interface.println(F(" **ERROR** Max tokens exceeded."));
   for (uint8_t i = 0; i < tokens_size_; i++) {
     interface.print(F("  "));
@@ -389,7 +389,7 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.print(F(" / "));
   interface.print(max_commands);
   interface.println(F(" (SCPI_MAX_COMMANDS)"));
-  if (command_overflow_error) 
+  if (setup_errors::command_overflow) 
     interface.println(F(" **ERROR** Max commands exceeded."));
   interface.println(F("  #\tHash\t\tHandler"));
   for (uint8_t i = 0; i < codes_size_; i++) {
