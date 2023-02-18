@@ -158,6 +158,8 @@ class SCPI_Parser {
   scpi_hash_t hash_magic_number = 37;
   ///Magic offset used for hashing the commands
   scpi_hash_t hash_magic_offset = 7;
+  //Timeout, in miliseconds, for GetMessage and ProcessInput.
+  unsigned long timeout = 10;
   
   #if SCPI_MAX_SPECIAL_COMMANDS
   //Registers a new valid special command and associate a procedure to it
@@ -215,8 +217,6 @@ class SCPI_Parser {
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message
   uint8_t message_length_ = 0;
-  //Timeout, in miliseconds, for GetMessage and ProcessInput.
-  unsigned long timeout = 10;
   //Varible used for checking timeout errors
   unsigned long time_checker_;
 
