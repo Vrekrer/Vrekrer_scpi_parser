@@ -231,6 +231,7 @@ class SCPI_Parser {
 
 // Include the implementation code here
 // This allows Arduino IDE users to configure options with #define directives 
+#include "Vrekrer_scpi_arrays_code.h"
 #include "Vrekrer_scpi_parser_code.h"
 #include "Vrekrer_scpi_parser_special_code.h"
 
