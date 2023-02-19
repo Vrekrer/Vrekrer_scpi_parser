@@ -22,7 +22,7 @@ SCPI_Parser::SCPI_Parser(){
 ///Add a token to the tokens' storage
 void SCPI_Parser::AddToken_(char *token) {
   if (tokens_size_ >= max_tokens) {
-    setup_errors::token_overflow = true;
+    setup_errors.token_overflow = true;
     return;
   }
   size_t token_size = strlen(token);
@@ -130,7 +130,7 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   tree_code_ = this->GetCommandCode_(tree_tokens);
   tree_length_ = tree_tokens.Size();
   if (tree_tokens.overflow_error) {
-    setup_errors::branch_overflow = true;
+    setup_errors.branch_overflow = true;
     tree_code_ = invalid_hash;
   } 
 }
@@ -165,7 +165,7 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 */
 void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   if (codes_size_ >= max_commands) {
-    setup_errors::command_overflow = true;
+    setup_errors.command_overflow = true;
     return;
   }
   SCPI_Commands command_tokens(command);
@@ -178,7 +178,7 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   bool overflow_error = command_tokens.overflow_error;
   overflow_error |= (tree_length_+command_tokens.Size()) 
                     > command_tokens.storage_size;
-  setup_errors::overflow_error |= overflow_error;
+  setup_errors.command_overflow |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
   valid_codes_[codes_size_] = code;
@@ -349,14 +349,14 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
   return NULL;
 }
 
-///Prints registered tokens and command hashes to the serial interface
+///Prints debug information to an interface.
 void SCPI_Parser::PrintDebugInfo(Stream& interface) 
 {
   interface.println(F("*** DEBUG INFO ***\n"));
   interface.print(F("Max command tree branches: "));
   interface.print(SCPI_ARRAY_SYZE);
   interface.println(F(" (SCPI_ARRAY_SYZE)"));
-  if (setup_errors::branch_overflow) 
+  if (setup_errors.branch_overflow) 
     interface.println(F(" **ERROR** Max branch size exceeded."));
   interface.print(F("Max number of parameters: "));
   interface.print(SCPI_ARRAY_SYZE);
@@ -370,7 +370,7 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.print(F(" / "));
   interface.print(max_tokens);
   interface.println(F(" (SCPI_MAX_TOKENS)"));
-  if (setup_errors::token_overflow) 
+  if (setup_errors.token_overflow) 
     interface.println(F(" **ERROR** Max tokens exceeded."));
   for (uint8_t i = 0; i < tokens_size_; i++) {
     interface.print(F("  "));
@@ -389,7 +389,7 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.print(F(" / "));
   interface.print(max_commands);
   interface.println(F(" (SCPI_MAX_COMMANDS)"));
-  if (setup_errors::command_overflow) 
+  if (setup_errors.command_overflow) 
     interface.println(F(" **ERROR** Max commands exceeded."));
   interface.println(F("  #\tHash\t\tHandler"));
   for (uint8_t i = 0; i < codes_size_; i++) {
@@ -400,19 +400,16 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
     if (valid_codes_[i] == unknown_hash) {
       interface.print(F("!*"));
       unknown_error = true;
-      continue;
     } else if (valid_codes_[i] == invalid_hash) {
       interface.print(F("!%"));
       invalid_error = true;
-      continue;
-    }
-    for (uint8_t j = 0; j < i; j++) {
-      if (valid_codes_[i] == valid_codes_[j]) {
-        interface.print("!!");
-        hash_crash = true;
-        break;
-      }
-    }
+    } else 
+      for (uint8_t j = 0; j < i; j++) 
+        if (valid_codes_[i] == valid_codes_[j]) {
+          interface.print("!!");
+          hash_crash = true;
+          break;
+        }
     interface.print(F("\t\t0x"));
     interface.print(long(callers_[i]), HEX);
     interface.println();
@@ -425,6 +422,49 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   if (hash_crash) 
     interface.println(F(" **ERROR** Hash crashes found. (!!)"));
 
+  #if SCPI_MAX_SPECIAL_COMMANDS
+  hash_crash = false;
+  unknown_error = false;
+  invalid_error = false;
+  interface.println();
+  interface.print(F("VALID SPECIAL CODES : "));
+  interface.print(special_codes_size_);
+  interface.print(F(" / "));
+  interface.print(max_special_commands);
+  interface.println(F(" (SCPI_MAX_SPECIAL_COMMANDS)"));
+  if (setup_errors.special_command_overflow) 
+    interface.println(F(" **ERROR** Max special commands exceeded."));
+  interface.println(F("  #\tHash\t\tHandler"));
+  for (uint8_t i = 0; i < special_codes_size_; i++) {
+    interface.print(F("  "));
+    interface.print(i+1);
+    interface.print(F(":\t"));
+    interface.print(valid_special_codes_[i], HEX);
+    if (valid_special_codes_[i] == unknown_hash) {
+      interface.print(F("!*"));
+      unknown_error = true;
+    } else if (valid_special_codes_[i] == invalid_hash) {
+      interface.print(F("!%"));
+      invalid_error = true;
+    } else
+      for (uint8_t j = 0; j < i; j++)
+        if (valid_special_codes_[i] == valid_special_codes_[j]) {
+          interface.print("!!");
+          hash_crash = true;
+          break;
+        }
+    interface.print(F("\t\t0x"));
+    interface.print(long(special_callers_[i]), HEX);
+    interface.println();
+    interface.flush();
+  }
+  if (unknown_error) 
+    interface.println(F(" **ERROR** Tried to register ukwnonk tokens. (!*)"));
+  if (invalid_error) 
+    interface.println(F(" **ERROR** Tried to register invalid commands. (!%)"));
+  if (hash_crash) 
+    interface.println(F(" **ERROR** Hash crashes found. (!!)"));
+  #endif
   
   interface.println(F("\nHASH Configuration:"));
   interface.print(F("  Hash size: "));
@@ -432,6 +472,7 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.println(F("bits (SCPI_HASH_TYPE)"));
   interface.print(F("  Hash magic number: "));
   interface.println(hash_magic_number);
-
+  interface.print(F("  Hash magic offset: "));
+  interface.println(hash_magic_offset);
   interface.println(F("\n*******************\n"));
 }

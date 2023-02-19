@@ -12,7 +12,7 @@
 void SCPI_Parser::RegisterSpecialCommand(char* command, 
                                          SCPI_special_caller_t caller) {
   if (special_codes_size_ >= max_special_commands) {
-    setup_errors::special_command_overflow = true;
+    setup_errors.special_command_overflow = true;
     return;
   }
   SCPI_Commands command_tokens(command);
@@ -25,7 +25,7 @@ void SCPI_Parser::RegisterSpecialCommand(char* command,
   bool overflow_error = command_tokens.overflow_error;
   overflow_error |= (tree_length_+command_tokens.Size()) 
                     > command_tokens.storage_size;
-  setup_errors::branch_overflow |= overflow_error;
+  setup_errors.branch_overflow |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
   valid_special_codes_[special_codes_size_] = code;
