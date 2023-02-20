@@ -11,6 +11,7 @@ You can fine tune, or expand the default library capabilities by defining
 SCPI_ARRAY_SYZE : Max branches of the command tree and max number of parameters.
 SCPI_MAX_TOKENS : Max number of valid tokens.
 SCPI_MAX_COMMANDS : Max number of registered commands.
+SCPI_MAX_SPECIAL_COMMANDS : Max number of special commands.
 SCPI_BUFFER_LENGTH : Length of the message buffer.
 SCPI_HASH_TYPE : Integer size used for hashes.
 */
@@ -54,7 +55,7 @@ Largest branch needed = 3
 i.e. STATus:OPERation:ENABle or SYSTem:ERRor:NEXT?
 */
 #define SCPI_ARRAY_SYZE 3 //Default value = 6
-//This also sets the max number of parameters (here we only need one).
+//This also sets the max number of parameters
 
 /*
 Valid Tokens: 
@@ -67,20 +68,21 @@ Valid Tokens:
 07: PRESet
 08: SYSTem
 09: ERRor
-10: VERSion
-11: *CLS
-12: *ESE
-13: *ESR
-14: *IDN
-15: *OPC
-16: *RST
-17: *SRE
-18: *STB
-19: *TST
-20: *WAI
-Total number of valid tokens: 20
+10: NEXt
+11: VERSion
+12: *CLS
+13: *ESE
+14: *ESR
+15: *IDN
+16: *OPC
+17: *RST
+18: *SRE
+19: *STB
+20: *TST
+21: *WAI
+Total number of valid tokens: 21
 */
-#define SCPI_MAX_TOKENS 20 //Default value = 15
+#define SCPI_MAX_TOKENS 21 //Default value = 15
 
 /*
 Valid Commands:
@@ -114,6 +116,12 @@ Total number of valid commands: 25
 #define SCPI_MAX_COMMANDS 25 //Default value = 20
 
 /*
+No special commands used
+See RawData_Parameters example for further details.
+*/
+#define SCPI_MAX_SPECIAL_COMMANDS 0 //Default value = 0
+
+/*
 The message buffer should be large enough to fit all the incoming message
 For example, the multicommand message
 "*RST; *cls; status:operation:enable; status:questionable:enable;\n"
@@ -122,8 +130,11 @@ will need at least 67 byte buffer length.
 #define SCPI_BUFFER_LENGTH 128 //Default value = 64
 
 /*
-If needed, to avoid hash crashes, increase SCPI_HASH_TYPE to uint16_t
-See the CommandTree_Check example for further details.
+In order to reduce RAM usage, Vrekrer_scpi_parser library (ver. 0.42 and later)
+uses a hash algorithm to store and compare registered commands. In very rare 
+situations this might end in hash crashes (two commands have the same hash)
+
+If needed, to avoid hash crashes, change SCPI_HASH_TYPE to uint16_t or uint32_t
 */
 #define SCPI_HASH_TYPE uint8_t //Default value = uint8_t
 
@@ -133,8 +144,22 @@ See the CommandTree_Check example for further details.
 SCPI_Parser my_instrument;
 
 
-void setup()
-{
+void setup() {
+  /*
+  To fix hash crashes, the hashing magic numbers can be changed before 
+  registering commands.
+  Use prime numbers up to the SCPI_HASH_TYPE size.
+  */
+  my_instrument.hash_magic_number = 37; //Default value = 37
+  my_instrument.hash_magic_offset = 7;  //Default value = 7
+
+  /*
+  Timeout time can be changed even during program execution
+  See Error_Handling example for further details.
+  */
+  my_instrument.timeout = 10; //value in miliseconds. Default value = 10
+
+
   my_instrument.SetCommandTreeBase(F("STATus:OPERation"));
     my_instrument.RegisterCommand(F(":CONDition?"), &DoNothing);
     my_instrument.RegisterCommand(F(":ENABle"), &DoNothing);
@@ -169,12 +194,30 @@ void setup()
   Serial.begin(9600);
   while (!Serial) {;}
   
-  //my_instrument.PrintDebugInfo();
+  /*
+  void SCPI_Parser::PrintDebugInfo(Stream &interface)
+  Will print any set up error to a Stream interface.
+  Use it only to test your setup  (not needed for normal execution).
+  */
+  my_instrument.PrintDebugInfo(Serial);
 }
 
-void loop()
-{
+void loop() {
+  /*
+  void SCPI_Parser::ProcessInput(Stream &interface, const char *term_chars)
+  will process any message from a stream inteface.
+  The used interface will be passed to the Registered command handlers.
+  */
   my_instrument.ProcessInput(Serial, "\n");
+
+  /*
+  void SCPI_Parser::Execute(char *message, Stream &interface)
+  can also be used to process a message.
+  Use this if the message source is not an Stream.
+  A stream like object is still needed for passing it to the command handlers.
+  i.e.
+    my_instrument.Execute(GetEthernetMsg(), Serial)   
+  */
 }
 
 void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
@@ -183,5 +226,8 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void DoNothing(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+}
+
+void DoSpe(SCPI_C commands, Stream& interface) {
 }
 
