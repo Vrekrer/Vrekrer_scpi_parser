@@ -32,6 +32,12 @@ void setup()
   //Not setting an error handler will just ignore the errors.
 
   Serial.begin(9600);
+
+  /*
+  Timeout time can be changed even during program execution
+  */
+  my_instrument.timeout = 10; //value in miliseconds. Default value = 10
+
 }
 
 void loop()
