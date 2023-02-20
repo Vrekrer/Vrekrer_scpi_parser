@@ -1,11 +1,12 @@
 # Vrekrer scpi parser
-A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments) parser for small Arduino projects.
+A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable_Instruments) parser for Arduino projects.
 
 ## Features
 - Small memory footprint, implemented for reduced RAM usage.
 - Minimal, clean code API.
 - Can process char* strings or input from any [Stream](https://www.arduino.cc/reference/en/language/functions/communication/stream/) interface like [Serial](https://www.arduino.cc/reference/en/language/functions/communication/serial) or [Ethernet](https://www.arduino.cc/en/Reference/Ethernet).
 - Flash strings ([F() macro](https://www.arduino.cc/reference/en/language/variables/utilities/progmem/#_the_f_macro)) support for lower RAM usage.
+- Automatic `Stream` communication errors handling (timeout, buffer overflow)
 
 
 ## SCPI features:
@@ -18,4 +19,4 @@ A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable
    E.g. usage : `"CHAN0:SEL"`, `"chan5:sel"`, `"chan13:sel"`
  - Comma separated parameters recognition.
  - Parameters treated as text, processed by the user program.
-
+ - Option to process large raw data parameters.
