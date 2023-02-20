@@ -1,5 +1,3 @@
-@page pag:definitions Definitions
-
 ## Termination chars.
  A string formed by any characters that indicates the end of a message.  
  Usual termination chars are LineFeed ``'\n'`` and/or CarrierReturn  ``'\r'``.  
