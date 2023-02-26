@@ -30,7 +30,8 @@ void SCPI_Parser::AddToken_(char *token) {
   if (token[token_size - 1] == '?') token_size--;
   for (uint8_t i = 0; i < tokens_size_; i++)
     //Check if the token is allready added
-    if (strncmp(token, tokens_[i], token_size) == 0) return;
+    if ( (strncmp(token, tokens_[i], token_size) == 0) 
+          and (token_size == strlen(tokens_[i])) ) return;
   char *stored_token = new char [token_size + 1];
   strncpy(stored_token, token, token_size);
   stored_token[token_size] = '\0';
