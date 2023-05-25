@@ -56,12 +56,12 @@ Header file.
 */
 class SCPI_String_Array {
  public:
-  char* operator[](const byte index);  //Add indexing capability
+  char* operator[](const byte index) const;  //Add indexing capability
   void Append(char* value);            //Append new string (LIFO stack Push)
   char* Pop();                         //LIFO stack Pop
-  char* First();                       //Returns the first element of the array
-  char* Last();                        //Returns the last element of the array
-  uint8_t Size();                      //Array size
+  char* First() const;                       //Returns the first element of the array
+  char* Last() const;                        //Returns the last element of the array
+  uint8_t Size() const;                      //Array size
   bool overflow_error = false;         //Storage overflow error
   const uint8_t storage_size = SCPI_ARRAY_SYZE; //Max size of the array 
  protected:
@@ -104,7 +104,7 @@ using SCPI_C = SCPI_Commands;
 using SCPI_P = SCPI_Parameters;
 
 ///Void template used with SCPI_Parser::RegisterCommand.
-using SCPI_caller_t = void(*)(SCPI_Commands, SCPI_Parameters, Stream&); 
+using SCPI_caller_t = void(*)(SCPI_Commands, SCPI_Parameters, Stream&);
 ///Void template used with SCPI_Parser::RegisterSpecialCommand.
 using SCPI_special_caller_t = void(*)(SCPI_Commands, Stream&);
 
