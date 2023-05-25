@@ -234,8 +234,21 @@ class SCPI_Parser {
 
 // Include the implementation code here
 // This allows Arduino IDE users to configure options with #define directives 
+//
+// Important!!! Implement the library only once in the main.ino file. If you are
+// including the same file in other *.cpp files, write this instead:
+//
+// #define VREKRER_SCPI_PARSER_NO_IMPL
+// #include "Vrekrer_scpi_parser.h"
+//
+// Otherwise, the Arduino linker script will return this error:
+//
+// (.text+0x0): multiple definition of `SCPI_Parser::ProcessInput(Stream&, char const*)'
+
+#ifdef VREKRER_SCPI_PARSER_NO_IMPL
 #include "Vrekrer_scpi_arrays_code.h"
 #include "Vrekrer_scpi_parser_code.h"
 #include "Vrekrer_scpi_parser_special_code.h"
+#endif
 
 #endif //VREKRER_SCPI_PARSER_H_
