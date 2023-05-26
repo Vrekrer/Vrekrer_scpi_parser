@@ -5,7 +5,7 @@
 // ## SCPI_String_Array member functions ##
 
 ///Add indexing capability.
-char* SCPI_String_Array::operator[](const uint8_t index) {
+char* SCPI_String_Array::operator[](const uint8_t index) const {
   if (index >= size_) return NULL; //Invalid index
   return values_[index];
 }
@@ -26,19 +26,19 @@ char* SCPI_String_Array::Pop() {
 }
 
 ///Returns the first element of the array
-char* SCPI_String_Array::First() {
+char* SCPI_String_Array::First() const {
   if (size_ == 0) return NULL; //Empty array
   return values_[0];
 }
 
 ///Returns the last element of the array
-char* SCPI_String_Array::Last() {
+char* SCPI_String_Array::Last() const {
   if (size_ == 0) return NULL; //Empty array
   return values_[size_ - 1];
 }
 
 ///Array size
-uint8_t SCPI_String_Array::Size() {
+uint8_t SCPI_String_Array::Size() const {
   return size_;
 }
 
