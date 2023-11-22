@@ -245,7 +245,7 @@ class SCPI_Parser {
 //
 // (.text+0x0): multiple definition of `SCPI_Parser::ProcessInput(Stream&, char const*)'
 
-#ifdef VREKRER_SCPI_PARSER_NO_IMPL
+#ifndef VREKRER_SCPI_PARSER_NO_IMPL
 #include "Vrekrer_scpi_arrays_code.h"
 #include "Vrekrer_scpi_parser_code.h"
 #include "Vrekrer_scpi_parser_special_code.h"
