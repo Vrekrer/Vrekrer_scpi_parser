@@ -59,6 +59,7 @@ void setup()
   my_instrument.RegisterCommand(F("DIn#?"), &QueryDigital_Input);
   my_instrument.RegisterCommand(F("DOut#"), &WriteDigital_Output);
   my_instrument.RegisterCommand(F("DOut#?"), &QueryDigital_Output);
+  my_instrument.RegisterCommand(F("DOut#:DRIve?"), &QueryDrive_Output);
 
   for (int i = 0; i < 6; i++) {
     pinMode(DIn[i], INPUT);
@@ -128,6 +129,26 @@ void QueryDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) 
   }
 }
 
+void QueryDrive_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+  //DOut<index>?
+  //Queries the drive strength of DOut[index] pin
+  //Return values is always FULL, as this is just a demo of a nested numeric
+  //Examples:
+  // DO4:DRI?      (Queries the strength of DOut[4] pin)
+  // DOut:DRI6?    (This does nothing as DOut[6] does not exists)
+
+  //Get the numeric suffix/index (if any) from the commands
+  commands.Pop();             // remove the DRIve command
+  String header = String(commands.Last());
+  header.toUpperCase();
+  int suffix = -1;
+  sscanf(header.c_str(),"%*[DOUT]%u", &suffix);
+
+  //If the suffix is valid, print the pin's logic value to the interface
+  if ( (suffix >= 0) && (suffix < 6) ) {
+      interface.println("FULL");
+  }
+}
 void WriteDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   //DOut<index> state
   //Sets the logic state of DOut[index] pin

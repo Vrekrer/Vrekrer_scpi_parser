@@ -170,6 +170,10 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
     return;
   }
   SCPI_Commands command_tokens(command);
+  if ((tree_length_ + command_tokens.Size()) > SCPI_ARRAY_SYZE) {
+    setup_errors.branch_overflow = true;
+    return;
+  }
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
   scpi_hash_t code = this->GetCommandCode_(command_tokens);
