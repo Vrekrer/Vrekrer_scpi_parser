@@ -144,7 +144,13 @@ void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
  For lower RAM usage use the Flash strings version.
 */
 void SCPI_Parser::SetCommandTreeBase(const char* tree_base) {
-  strcpy(msg_buffer_, tree_base);
+  size_t len = strlen(tree_base);
+  if (len >= buffer_length) {
+    setup_errors.command_overflow = true;
+    return;
+  }
+  strncpy(msg_buffer_, tree_base, buffer_length - 1);
+  msg_buffer_[buffer_length - 1] = '\0';
   this->SetCommandTreeBase(msg_buffer_);
 }
 
@@ -195,7 +201,13 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
  For lower RAM usage use the Flash strings version.
 */
 void SCPI_Parser::RegisterCommand(const char* command, SCPI_caller_t caller) {
-  strcpy(msg_buffer_, command);
+  size_t len = strlen(command);
+  if (len >= buffer_length) {
+    setup_errors.command_overflow = true;
+    return;
+  }
+  strncpy(msg_buffer_, command, buffer_length - 1);
+  msg_buffer_[buffer_length - 1] = '\0';
   this->RegisterCommand(msg_buffer_, caller);
 }
 
