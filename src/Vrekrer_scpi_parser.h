@@ -39,6 +39,18 @@ Header file.
   #define SCPI_HASH_TYPE uint8_t
 #endif
 
+/// Default magic number used for hashing the commands.
+/// 37 for 8 and 16 bit hashes, 16777619 for 32 bit or larger hashes.
+#ifndef SCPI_HASH_MAGIC_NUMBER
+  #define SCPI_HASH_MAGIC_NUMBER \
+    (sizeof(SCPI_HASH_TYPE) >= 4 ? 16777619UL : 37UL)
+#endif
+
+/// Default magic offset used for hashing the commands.
+#ifndef SCPI_HASH_MAGIC_OFFSET
+  #define SCPI_HASH_MAGIC_OFFSET 7
+#endif
+
 #include "Arduino.h"
 
 /*!
@@ -174,9 +186,9 @@ class SCPI_Parser {
   //Prints registered tokens and command hashes to the serial interface
   void PrintDebugInfo(Stream& interface);
   ///Magic number used for hashing the commands
-  scpi_hash_t hash_magic_number = 37;
+  scpi_hash_t hash_magic_number = scpi_hash_t(SCPI_HASH_MAGIC_NUMBER);
   ///Magic offset used for hashing the commands
-  scpi_hash_t hash_magic_offset = 7;
+  scpi_hash_t hash_magic_offset = scpi_hash_t(SCPI_HASH_MAGIC_OFFSET);
   //Timeout, in miliseconds, for GetMessage and ProcessInput.
   unsigned long timeout = 10;
   
