@@ -4,7 +4,7 @@
 
 
 //Do nothing function
-void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
+void DefaultErrorHandler(SCPI_C, SCPI_P, Stream&) {}
 
 
 // ## SCPI_Registered_Commands member functions. ##
@@ -393,7 +393,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     
     #if SCPI_MAX_SPECIAL_COMMANDS
     //For the first space only.
-    if (strcspn(msg_buffer_, " ") == message_length_- 1){
+    if (strcspn(msg_buffer_, " ") == size_t(message_length_ - 1)){
       msg_buffer_[message_length_ - 1] =  '\0';
       tree_code_ = 0;
       tree_length_ = 0;
