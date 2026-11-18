@@ -38,3 +38,30 @@ if (my_instrument.HasSetupError()) {
 Commands are stored as hashes of `SCPI_HASH_TYPE` size (`uint8_t` by
 default). If two commands get the same hash, use `uint16_t` or `uint32_t`.  
 See the Configuration_Options example for details.
+
+## Using the library in more than one file
+The library code is compiled where `Vrekrer_scpi_parser.h` is included, so
+the configuration `#define`s (`SCPI_MAX_COMMANDS`, etc.) can be set in the
+sketch. When more than one file of a project uses the parser, the code must
+be compiled in only one of them, otherwise the linker reports
+`multiple definition of ...` errors.
+
+Put the options in a header of your own and include it everywhere, so all
+the files see the same configuration:
+```cpp
+// scpi_config.h
+#pragma once
+#define SCPI_MAX_COMMANDS 30
+#include "Vrekrer_scpi_parser.h"
+extern SCPI_Parser my_instrument;
+```
+In the main `.ino` file (code compiled here):
+```cpp
+#include "scpi_config.h"
+SCPI_Parser my_instrument;
+```
+In every other `.cpp` file:
+```cpp
+#define VREKRER_SCPI_PARSER_NO_IMPL
+#include "scpi_config.h"
+```
