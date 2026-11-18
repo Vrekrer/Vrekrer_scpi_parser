@@ -223,12 +223,41 @@ static void TestSpecialCommand() {
   printf("special command dispatch\n");
   Probe parser;
   parser.RegisterCommand("*IDN?", tagged[1]);
+  parser.RegisterCommand("SOURce:VOLTage", tagged[2]);
   parser.RegisterSpecialCommand("DATA:RAW", &HandlerSpecial);
   Stream interface;
   interface.input = "DATA:RAW 0123\n";
   called.clear();
   parser.ProcessInput(interface, "\n");
   CHECK(called == "S,");
+  // A normal command with parameters used to write through a null pointer
+  // when the parser checked it for special commands.
+  const char* messages[] = {"SOUR:VOLT 5\n", "SOUR:VOLT\t5 6\n"};
+  for (const char* message : messages) {
+    Stream input;
+    input.input = message;
+    called.clear();
+    parser.ProcessInput(input, "\n");
+    CHECK(called == Tag(2));
+  }
+}
+
+// A CR+LF message received with "\n" as termination chars leaves a CR at the
+// end, which used to be taken as part of the last keyword.
+static void TestCarriageReturn() {
+  printf("CR before the termination chars\n");
+  Probe parser;
+  parser.RegisterCommand("*IDN?", tagged[1]);
+  parser.RegisterCommand("SOURce:VOLTage", tagged[2]);
+  const char* messages[] = {"*IDN?\r\n", "SOUR:VOLT\r\n", "SOUR:VOLT 5\r\n"};
+  const int tags[] = {1, 2, 2};
+  for (int i = 0; i < 3; i++) {
+    Stream interface;
+    interface.input = messages[i];
+    called.clear();
+    parser.ProcessInput(interface, "\n");
+    CHECK(called == Tag(tags[i]));
+  }
 }
 
 // A command whose hash is 0 (the value used for unknown commands) used to be
@@ -401,6 +430,21 @@ static void TestSetupErrors() {
       parser.RegisterCommand("*IDN?", tagged[1]);
     CHECK(parser.GetSetupErrors().command_overflow);
   }
+  {
+    // More keywords than SCPI_ARRAY_SYZE is a branch overflow, and used to be
+    // reported as a command overflow.
+    Probe parser;
+    parser.SetCommandTreeBase("MEASure:VOLTage:DC");
+    parser.RegisterCommand(":CHANnel#:RANGe:LOW:LIMit?", tagged[1]);
+    CHECK(parser.GetSetupErrors().branch_overflow);
+    CHECK(not parser.GetSetupErrors().command_overflow);
+  }
+  {
+    Probe parser;
+    parser.RegisterCommand("A:B:C:D:E:F:G", tagged[2]);
+    CHECK(parser.GetSetupErrors().branch_overflow);
+    CHECK(not parser.GetSetupErrors().command_overflow);
+  }
   if (sizeof(scpi_hash_t) == 1) {
     // These two commands have the same 8 bit hash with the default settings.
     Probe parser;
@@ -418,6 +462,7 @@ int main() {
          int(sizeof(scpi_hash_t) * 8));
   TestExampleTables();
   TestSpecialCommand();
+  TestCarriageReturn();
   if (sizeof(scpi_hash_t) == 1) {
     // Commands that hash to 0 or 1 are rare with wider hashes, but they are
     // easy to find with 8 bits.
