@@ -20,3 +20,21 @@ A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable
  - Comma separated parameters recognition.
  - Parameters treated as text, processed by the user program.
  - Option to process large raw data parameters.
+
+## Checking the setup
+Errors found while registering commands can be checked once all the
+commands are registered:
+ - Storage overflows (see the `SCPI_MAX_...` options).
+ - Two commands with the same hash (only the first one can be executed).
+ - Two tokens that accept the same short or long form, e.g. `STATus` and
+   `STATe` (`STAT` always selects the first one).
+
+```cpp
+if (my_instrument.HasSetupError()) {
+  my_instrument.PrintDebugInfo(Serial);
+}
+```
+`GetSetupErrors()` returns the individual error flags.  
+Commands are stored as hashes of `SCPI_HASH_TYPE` size (`uint8_t` by
+default). If two commands get the same hash, use `uint16_t` or `uint32_t`.  
+See the Configuration_Options example for details.
