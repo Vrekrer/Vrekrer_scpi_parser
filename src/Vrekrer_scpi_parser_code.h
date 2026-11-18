@@ -47,13 +47,28 @@ void SCPI_Parser::AddToken_(char *token) {
  Return ``unknown_hash`` if the command contains  
  keywords not registered as tokens.  
  The hash is calculated including the TreeBase hash.  
+ A valid command never gets ``unknown_hash`` or ``invalid_hash``.  
  @see SetCommandTreeBase
 */
 scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
-  if (tree_code_ == invalid_hash) return invalid_hash;
-  scpi_hash_t code;
-  code = (tree_code_ == 0) ? hash_magic_offset : tree_code_;
-  if (commands.Size()==0) return unknown_hash;
+  if (tree_error_) return invalid_hash;
+  scpi_hash_t code = (tree_length_ == 0) ? hash_magic_offset : tree_code_;
+  if (not this->HashKeywords_(commands, code)) return unknown_hash;
+  //unknown_hash and invalid_hash are reserved, a valid command that hashes
+  //to one of them would never be executed. Move it to another value
+  //(small values are often used by single keyword commands).
+  if ((code == unknown_hash) or (code == invalid_hash)) code = ~code;
+  return code;
+}
+
+/*!
+ Apply the hashing steps of the command keywords to a hash.
+ @param commands  Keywords of a command
+ @param code  Initial hash, updated with the result
+ @return false if the command contains keywords not registered as tokens.
+*/
+bool SCPI_Parser::HashKeywords_(SCPI_Commands& commands, scpi_hash_t& code) {
+  if (commands.Size()==0) return false;
   //Loop all keywords in the command
   for (uint8_t i = 0; i < commands.Size(); i++) {
     //Get keywords's length
@@ -101,8 +116,8 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       break;
 
       no_header_token_match:;
-      //If the keyword does not match any token return unknown_hash
-      if (j == (tokens_size_ - 1)) return unknown_hash;
+      //If the keyword does not match any token
+      if (j == (tokens_size_ - 1)) return false;
     }
     //If last keyword is a query, add a hashing step
     if (is_query) {
@@ -110,7 +125,7 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       code -= 1;
     }
   }
-  return code;
+  return true;
 }
 
 /*!
@@ -120,19 +135,20 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
 */
 void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   SCPI_Commands tree_tokens(tree_base);
-  if (tree_tokens.Size() == 0) {
-    tree_code_ = 0;
-    tree_length_ = 0;
-    return;
-  }
+  tree_code_ = 0;
+  tree_length_ = 0;
+  tree_error_ = false;
+  if (tree_tokens.Size() == 0) return;
   for (uint8_t i = 0; i < tree_tokens.Size(); i++)
     AddToken_(tree_tokens[i]);
-  tree_code_ = 0;
-  tree_code_ = this->GetCommandCode_(tree_tokens);
+  //The TreeBase hash is kept as calculated (it may be a reserved value),
+  //so the commands registered under it get the same hash as when received.
+  tree_code_ = hash_magic_offset;
+  tree_error_ = not this->HashKeywords_(tree_tokens, tree_code_);
   tree_length_ = tree_tokens.Size();
   if (tree_tokens.overflow_error) {
     setup_errors.branch_overflow = true;
-    tree_code_ = invalid_hash;
+    tree_error_ = true;
   } 
 }
 
@@ -243,6 +259,8 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
     }
 
     tree_code_ = 0;
+    tree_length_ = 0;
+    tree_error_ = false;
     SCPI_Commands commands(message);
     message = multicomands;
     SCPI_Parameters parameters(commands.not_processed_message);
@@ -306,6 +324,8 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     if (strcspn(msg_buffer_, " ") == message_length_- 1){
       msg_buffer_[message_length_ - 1] =  '\0';
       tree_code_ = 0;
+      tree_length_ = 0;
+      tree_error_ = false;
       SCPI_Commands commands(msg_buffer_);
       scpi_hash_t code = this->GetCommandCode_(commands);
       for (uint8_t i = 0; i < special_codes_size_; i++) 

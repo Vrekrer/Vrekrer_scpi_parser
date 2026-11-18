@@ -199,6 +199,8 @@ class SCPI_Parser {
   void AddToken_(char* token);
   //Get a hash from a command
   scpi_hash_t GetCommandCode_(SCPI_Commands& commands);
+  //Apply the hashing steps of the command keywords to a hash
+  bool HashKeywords_(SCPI_Commands& commands, scpi_hash_t& code);
   //Number of stored tokens
   uint8_t tokens_size_ = 0;
   //Storage for tokens
@@ -209,10 +211,12 @@ class SCPI_Parser {
   scpi_hash_t valid_codes_[SCPI_MAX_COMMANDS];
   //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
-  //TreeBase branch's hash used when calculating hashes (0 for root)
+  //TreeBase branch's hash used when calculating hashes
   scpi_hash_t tree_code_ = 0;
   //TreeBase branch's length (0 for root)
   uint8_t tree_length_ = 0;
+  //TreeBase branch could not be processed
+  bool tree_error_ = false;
   //Message buffer.
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message
