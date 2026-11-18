@@ -32,11 +32,49 @@ void SCPI_Parser::AddToken_(char *token) {
     //Check if the token is allready added
     if ( (strncmp(token, tokens_[i], token_size) == 0) 
           and (token_size == strlen(tokens_[i])) ) return;
+
   char *stored_token = new char [token_size + 1];
   strncpy(stored_token, token, token_size);
   stored_token[token_size] = '\0';
   tokens_[tokens_size_] = stored_token;
   tokens_size_++;
+}
+
+/*!
+ Returns true if a keyword can match two stored tokens.
+
+ A keyword that matches two tokens always selects the first one. A token
+ followed by the same token with numeric suffix (e.g. OUTPut and OUTPut#)
+ is fine, keywords with digits match the latter.  
+ This is only checked when requested, so sketches that don't check their
+ setup don't include this code.
+*/
+bool SCPI_Parser::HasAmbiguousTokens_() const {
+  for (uint8_t j = 1; j < tokens_size_; j++) {
+    const char* token = tokens_[j];
+    size_t token_size = strlen(token);
+    bool numeric_suffix = (token_size > 0) and (token[token_size - 1] == '#');
+    size_t forms[2] = {0, numeric_suffix ? token_size - 1 : token_size};
+    while ((forms[0] < forms[1]) and isupper(token[forms[0]])) forms[0]++;
+    for (uint8_t i = 0; i < j; i++) {
+      size_t stored_forms[2] = {0, strlen(tokens_[i])};
+      if ((stored_forms[1] > 0) and (tokens_[i][stored_forms[1] - 1] == '#'))
+        stored_forms[1]--;
+      else if (numeric_suffix) continue;
+      while ((stored_forms[0] < stored_forms[1])
+             and isupper(tokens_[i][stored_forms[0]])) stored_forms[0]++;
+      for (uint8_t a = 0; a < 2; a++)
+        for (uint8_t b = 0; b < 2; b++) {
+          size_t length = forms[a];
+          if ((length == 0) or (length != stored_forms[b])) continue;
+          size_t k = 0;
+          while ((k < length) and (toupper(token[k]) == toupper(tokens_[i][k])))
+            k++;
+          if (k == length) return true;
+        }
+    }
+  }
+  return false;
 }
 
 /*!
@@ -251,7 +289,9 @@ void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
  @see PrintDebugInfo
 */
 SCPI_Parser::SetupErrors SCPI_Parser::GetSetupErrors() const {
-  return setup_errors;
+  SetupErrors errors = setup_errors;
+  errors.ambiguous_token = this->HasAmbiguousTokens_();
+  return errors;
 }
 
 /*!
@@ -265,7 +305,8 @@ bool SCPI_Parser::HasSetupError() const {
       or setup_errors.token_overflow
       or setup_errors.branch_overflow
       or setup_errors.special_command_overflow
-      or setup_errors.hash_collision;
+      or setup_errors.hash_collision
+      or this->HasAmbiguousTokens_();
 }
 
 
@@ -424,6 +465,8 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.println(F(" (SCPI_MAX_TOKENS)"));
   if (setup_errors.token_overflow) 
     interface.println(F(" **ERROR** Max tokens exceeded."));
+  if (this->HasAmbiguousTokens_()) 
+    interface.println(F(" **ERROR** Tokens with the same short or long form."));
   for (uint8_t i = 0; i < tokens_size_; i++) {
     interface.print(F("  "));
     interface.print(i+1);

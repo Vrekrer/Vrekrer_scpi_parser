@@ -145,6 +145,8 @@ class SCPI_Parser {
     bool special_command_overflow = false;
     ///A command got the same hash as a registered one
     bool hash_collision = false;
+    ///Two tokens accept the same short or long form
+    bool ambiguous_token = false;
   };
   //Returns the errors found while registering commands
   SetupErrors GetSetupErrors() const;
@@ -224,6 +226,7 @@ class SCPI_Parser {
   //TreeBase branch's length (0 for root)
   uint8_t tree_length_ = 0;
   //TreeBase branch could not be processed
+  bool HasAmbiguousTokens_() const;
   bool tree_error_ = false;
   //Message buffer.
   char msg_buffer_[SCPI_BUFFER_LENGTH];
