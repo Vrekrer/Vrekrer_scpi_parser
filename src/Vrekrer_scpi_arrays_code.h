@@ -52,8 +52,8 @@ SCPI_Commands::SCPI_Commands(){}
  Constructor that extracts and tokenize a command from a message.  
  @param message  Message to process.
 
- The message is processed until a space, tab or the end of the string is 
- found, the rest is available at not_processed_message.  
+ The message is processed until a space, tab, CR, LF or the end of the 
+ string is found, the rest is available at not_processed_message.  
  The processed part is split on the ':' characters, the resulting parts 
  (tokens) are stored in the array.
 */
@@ -62,7 +62,9 @@ SCPI_Commands::SCPI_Commands(char* message) {
   // Trim leading spaces and tabs
   while (isspace(*token)) token++;
   // Save parameters and multicommands for later
-  not_processed_message = strpbrk(token, " \t");
+  // CR and LF also end the header, e.g. a CR left over from a CR+LF message
+  // received with "\n" as termination chars.
+  not_processed_message = strpbrk(token, " \t\r\n");
   if (not_processed_message != NULL) {
    not_processed_message[0] = '\0';
    not_processed_message++;

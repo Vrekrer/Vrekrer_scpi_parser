@@ -14,6 +14,8 @@ SCPI_MAX_COMMANDS : Max number of registered commands.
 SCPI_MAX_SPECIAL_COMMANDS : Max number of special commands.
 SCPI_BUFFER_LENGTH : Length of the message buffer.
 SCPI_HASH_TYPE : Integer size used for hashes.
+SCPI_HASH_MAGIC_NUMBER : Default magic number used for hashing the commands.
+SCPI_HASH_MAGIC_OFFSET : Default magic offset used for hashing the commands.
 */
 
 /*
@@ -133,6 +135,7 @@ will need at least 67 byte buffer length.
 In order to reduce RAM usage, Vrekrer_scpi_parser library (ver. 0.42 and later)
 uses a hash algorithm to store and compare registered commands. In very rare 
 situations this might end in hash crashes (two commands have the same hash)
+HasSetupError() reports them (see setup()).
 
 If needed, to avoid hash crashes, change SCPI_HASH_TYPE to uint16_t or uint32_t
 */
@@ -149,8 +152,10 @@ void setup() {
   To fix hash crashes, the hashing magic numbers can be changed before 
   registering commands.
   Use prime numbers up to the SCPI_HASH_TYPE size.
+  The defaults can also be set with the SCPI_HASH_MAGIC_NUMBER and
+  SCPI_HASH_MAGIC_OFFSET macros.
   */
-  my_instrument.hash_magic_number = 37; //Default value = 37
+  my_instrument.hash_magic_number = 37; //Default value = 37 (16777619 for 32 bit hashes)
   my_instrument.hash_magic_offset = 7;  //Default value = 7
 
   /*
@@ -200,6 +205,16 @@ void setup() {
   Use it only to test your setup  (not needed for normal execution).
   */
   my_instrument.PrintDebugInfo(Serial);
+
+  /*
+  bool SCPI_Parser::HasSetupError()
+  Returns true if any set up error was found (storage overflows, hash crashes
+  or tokens with the same short or long form).
+  GetSetupErrors() returns the individual errors.
+  */
+  if (my_instrument.HasSetupError()) {
+    Serial.println(F("Set up errors found, see the debug info."));
+  }
 }
 
 void loop() {

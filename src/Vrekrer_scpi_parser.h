@@ -39,6 +39,18 @@ Header file.
   #define SCPI_HASH_TYPE uint8_t
 #endif
 
+/// Default magic number used for hashing the commands.
+/// 37 for 8 and 16 bit hashes, 16777619 for 32 bit or larger hashes.
+#ifndef SCPI_HASH_MAGIC_NUMBER
+  #define SCPI_HASH_MAGIC_NUMBER \
+    (sizeof(SCPI_HASH_TYPE) >= 4 ? 16777619UL : 37UL)
+#endif
+
+/// Default magic offset used for hashing the commands.
+#ifndef SCPI_HASH_MAGIC_OFFSET
+  #define SCPI_HASH_MAGIC_OFFSET 7
+#endif
+
 #include "Arduino.h"
 
 /*!
@@ -133,6 +145,25 @@ class SCPI_Parser {
                        SCPI_caller_t caller);
   //Set the function to be used by the error handler.
   void SetErrorHandler(SCPI_caller_t caller);
+  ///Errors found while registering commands.
+  struct SetupErrors {
+    ///Command storage overflow error
+    bool command_overflow = false;
+    ///Token storage overflow error
+    bool token_overflow = false;
+    ///Branch (SCPI_Commands) storage overflow error
+    bool branch_overflow = false;
+    ///Special command storage overflow error
+    bool special_command_overflow = false;
+    ///A command got the same hash as a registered one
+    bool hash_collision = false;
+    ///Two tokens accept the same short or long form
+    bool ambiguous_token = false;
+  };
+  //Returns the errors found while registering commands
+  SetupErrors GetSetupErrors() const;
+  //Returns true if any error was found while registering commands
+  bool HasSetupError() const;
   ///SCPI Error codes.
   enum class ErrorCode{
     ///No error
@@ -155,9 +186,9 @@ class SCPI_Parser {
   //Prints registered tokens and command hashes to the serial interface
   void PrintDebugInfo(Stream& interface);
   ///Magic number used for hashing the commands
-  scpi_hash_t hash_magic_number = 37;
+  scpi_hash_t hash_magic_number = scpi_hash_t(SCPI_HASH_MAGIC_NUMBER);
   ///Magic offset used for hashing the commands
-  scpi_hash_t hash_magic_offset = 7;
+  scpi_hash_t hash_magic_offset = scpi_hash_t(SCPI_HASH_MAGIC_OFFSET);
   //Timeout, in miliseconds, for GetMessage and ProcessInput.
   unsigned long timeout = 10;
   
@@ -179,17 +210,8 @@ class SCPI_Parser {
   const uint8_t max_tokens = SCPI_MAX_TOKENS;
   //Max number of registered commands.
   const uint8_t max_commands = SCPI_MAX_COMMANDS;
-  //Internal errors container
-  struct internal_errors {
-    //Command storage overflow error
-    bool command_overflow = false;
-    //Token storage overflow error
-    bool token_overflow = false;
-    //Branch (SCPI_Commands) storage overflow error
-    bool branch_overflow = false;
-    //Special command storage overflow error
-    bool special_command_overflow = false;
-  } setup_errors;
+  //Errors found while registering commands
+  SetupErrors setup_errors;
   //Hash result for unknown commands
   const scpi_hash_t unknown_hash = 0;
   //Hash reserved for invalid commands
@@ -199,6 +221,8 @@ class SCPI_Parser {
   void AddToken_(char* token);
   //Get a hash from a command
   scpi_hash_t GetCommandCode_(SCPI_Commands& commands);
+  //Apply the hashing steps of the command keywords to a hash
+  bool HashKeywords_(SCPI_Commands& commands, scpi_hash_t& code);
   //Number of stored tokens
   uint8_t tokens_size_ = 0;
   //Storage for tokens
@@ -209,10 +233,13 @@ class SCPI_Parser {
   scpi_hash_t valid_codes_[SCPI_MAX_COMMANDS];
   //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
-  //TreeBase branch's hash used when calculating hashes (0 for root)
+  //TreeBase branch's hash used when calculating hashes
   scpi_hash_t tree_code_ = 0;
   //TreeBase branch's length (0 for root)
   uint8_t tree_length_ = 0;
+  //TreeBase branch could not be processed
+  bool HasAmbiguousTokens_() const;
+  bool tree_error_ = false;
   //Message buffer.
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   //Length of the readed message

@@ -4,7 +4,7 @@
 
 
 //Do nothing function
-void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
+void DefaultErrorHandler(SCPI_C, SCPI_P, Stream&) {}
 
 
 // ## SCPI_Registered_Commands member functions. ##
@@ -32,11 +32,49 @@ void SCPI_Parser::AddToken_(char *token) {
     //Check if the token is allready added
     if ( (strncmp(token, tokens_[i], token_size) == 0) 
           and (token_size == strlen(tokens_[i])) ) return;
+
   char *stored_token = new char [token_size + 1];
   strncpy(stored_token, token, token_size);
   stored_token[token_size] = '\0';
   tokens_[tokens_size_] = stored_token;
   tokens_size_++;
+}
+
+/*!
+ Returns true if a keyword can match two stored tokens.
+
+ A keyword that matches two tokens always selects the first one. A token
+ followed by the same token with numeric suffix (e.g. OUTPut and OUTPut#)
+ is fine, keywords with digits match the latter.  
+ This is only checked when requested, so sketches that don't check their
+ setup don't include this code.
+*/
+bool SCPI_Parser::HasAmbiguousTokens_() const {
+  for (uint8_t j = 1; j < tokens_size_; j++) {
+    const char* token = tokens_[j];
+    size_t token_size = strlen(token);
+    bool numeric_suffix = (token_size > 0) and (token[token_size - 1] == '#');
+    size_t forms[2] = {0, numeric_suffix ? token_size - 1 : token_size};
+    while ((forms[0] < forms[1]) and isupper(token[forms[0]])) forms[0]++;
+    for (uint8_t i = 0; i < j; i++) {
+      size_t stored_forms[2] = {0, strlen(tokens_[i])};
+      if ((stored_forms[1] > 0) and (tokens_[i][stored_forms[1] - 1] == '#'))
+        stored_forms[1]--;
+      else if (numeric_suffix) continue;
+      while ((stored_forms[0] < stored_forms[1])
+             and isupper(tokens_[i][stored_forms[0]])) stored_forms[0]++;
+      for (uint8_t a = 0; a < 2; a++)
+        for (uint8_t b = 0; b < 2; b++) {
+          size_t length = forms[a];
+          if ((length == 0) or (length != stored_forms[b])) continue;
+          size_t k = 0;
+          while ((k < length) and (toupper(token[k]) == toupper(tokens_[i][k])))
+            k++;
+          if (k == length) return true;
+        }
+    }
+  }
+  return false;
 }
 
 /*!
@@ -47,13 +85,28 @@ void SCPI_Parser::AddToken_(char *token) {
  Return ``unknown_hash`` if the command contains  
  keywords not registered as tokens.  
  The hash is calculated including the TreeBase hash.  
+ A valid command never gets ``unknown_hash`` or ``invalid_hash``.  
  @see SetCommandTreeBase
 */
 scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
-  if (tree_code_ == invalid_hash) return invalid_hash;
-  scpi_hash_t code;
-  code = (tree_code_ == 0) ? hash_magic_offset : tree_code_;
-  if (commands.Size()==0) return unknown_hash;
+  if (tree_error_) return invalid_hash;
+  scpi_hash_t code = (tree_length_ == 0) ? hash_magic_offset : tree_code_;
+  if (not this->HashKeywords_(commands, code)) return unknown_hash;
+  //unknown_hash and invalid_hash are reserved, a valid command that hashes
+  //to one of them would never be executed. Move it to another value
+  //(small values are often used by single keyword commands).
+  if ((code == unknown_hash) or (code == invalid_hash)) code = ~code;
+  return code;
+}
+
+/*!
+ Apply the hashing steps of the command keywords to a hash.
+ @param commands  Keywords of a command
+ @param code  Initial hash, updated with the result
+ @return false if the command contains keywords not registered as tokens.
+*/
+bool SCPI_Parser::HashKeywords_(SCPI_Commands& commands, scpi_hash_t& code) {
+  if (commands.Size()==0) return false;
   //Loop all keywords in the command
   for (uint8_t i = 0; i < commands.Size(); i++) {
     //Get keywords's length
@@ -101,8 +154,8 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       break;
 
       no_header_token_match:;
-      //If the keyword does not match any token return unknown_hash
-      if (j == (tokens_size_ - 1)) return unknown_hash;
+      //If the keyword does not match any token
+      if (j == (tokens_size_ - 1)) return false;
     }
     //If last keyword is a query, add a hashing step
     if (is_query) {
@@ -110,7 +163,7 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       code -= 1;
     }
   }
-  return code;
+  return true;
 }
 
 /*!
@@ -120,19 +173,20 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
 */
 void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
   SCPI_Commands tree_tokens(tree_base);
-  if (tree_tokens.Size() == 0) {
-    tree_code_ = 0;
-    tree_length_ = 0;
-    return;
-  }
+  tree_code_ = 0;
+  tree_length_ = 0;
+  tree_error_ = false;
+  if (tree_tokens.Size() == 0) return;
   for (uint8_t i = 0; i < tree_tokens.Size(); i++)
     AddToken_(tree_tokens[i]);
-  tree_code_ = 0;
-  tree_code_ = this->GetCommandCode_(tree_tokens);
+  //The TreeBase hash is kept as calculated (it may be a reserved value),
+  //so the commands registered under it get the same hash as when received.
+  tree_code_ = hash_magic_offset;
+  tree_error_ = not this->HashKeywords_(tree_tokens, tree_code_);
   tree_length_ = tree_tokens.Size();
   if (tree_tokens.overflow_error) {
     setup_errors.branch_overflow = true;
-    tree_code_ = invalid_hash;
+    tree_error_ = true;
   } 
 }
 
@@ -179,8 +233,13 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   bool overflow_error = command_tokens.overflow_error;
   overflow_error |= (tree_length_+command_tokens.Size()) 
                     > command_tokens.storage_size;
-  setup_errors.command_overflow |= overflow_error;
+  setup_errors.branch_overflow |= overflow_error;
   if (overflow_error) code = invalid_hash;
+
+  //Only the first command with a given hash can be executed
+  if (code != invalid_hash)
+    for (uint8_t i = 0; i < codes_size_; i++)
+      if (valid_codes_[i] == code) setup_errors.hash_collision = true;
 
   valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
@@ -221,6 +280,35 @@ void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
   callers_[max_commands] = caller;
 }
 
+/*!
+ Returns the errors found while registering commands.
+
+ Example:  
+  ``if (my_instrument.GetSetupErrors().hash_collision) {...}``
+ @see HasSetupError
+ @see PrintDebugInfo
+*/
+SCPI_Parser::SetupErrors SCPI_Parser::GetSetupErrors() const {
+  SetupErrors errors = setup_errors;
+  errors.ambiguous_token = this->HasAmbiguousTokens_();
+  return errors;
+}
+
+/*!
+ Returns true if any error was found while registering commands.
+
+ Call it after all the commands are registered. If it returns true,
+ some commands will not work as expected, use PrintDebugInfo for details.
+*/
+bool SCPI_Parser::HasSetupError() const {
+  return setup_errors.command_overflow
+      or setup_errors.token_overflow
+      or setup_errors.branch_overflow
+      or setup_errors.special_command_overflow
+      or setup_errors.hash_collision
+      or this->HasAmbiguousTokens_();
+}
+
 
 /*!
  Process a message and execute it if a valid command is found.
@@ -243,6 +331,8 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
     }
 
     tree_code_ = 0;
+    tree_length_ = 0;
+    tree_error_ = false;
     SCPI_Commands commands(message);
     message = multicomands;
     SCPI_Parameters parameters(commands.not_processed_message);
@@ -303,9 +393,11 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     
     #if SCPI_MAX_SPECIAL_COMMANDS
     //For the first space only.
-    if (strcspn(msg_buffer_, " ") == message_length_- 1){
+    if (strcspn(msg_buffer_, " ") == size_t(message_length_ - 1)){
       msg_buffer_[message_length_ - 1] =  '\0';
       tree_code_ = 0;
+      tree_length_ = 0;
+      tree_error_ = false;
       SCPI_Commands commands(msg_buffer_);
       scpi_hash_t code = this->GetCommandCode_(commands);
       for (uint8_t i = 0; i < special_codes_size_; i++) 
@@ -318,8 +410,11 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
       msg_buffer_[message_length_ - 1] = ' ';
       for (uint8_t i = 0; i < commands.Size()-1; i++)
         commands[i][strlen(commands[i])] = ':';
-      commands.not_processed_message--;
-      commands.not_processed_message[0] = ' ';
+      //The header can also end at a tab, CR or LF before the space.
+      if (commands.not_processed_message != NULL) {
+        commands.not_processed_message--;
+        commands.not_processed_message[0] = ' ';
+      }
     }
     #endif
 
@@ -373,6 +468,8 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.println(F(" (SCPI_MAX_TOKENS)"));
   if (setup_errors.token_overflow) 
     interface.println(F(" **ERROR** Max tokens exceeded."));
+  if (this->HasAmbiguousTokens_()) 
+    interface.println(F(" **ERROR** Tokens with the same short or long form."));
   for (uint8_t i = 0; i < tokens_size_; i++) {
     interface.print(F("  "));
     interface.print(i+1);

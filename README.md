@@ -20,3 +20,48 @@ A simple [SCPI](https://en.wikipedia.org/wiki/Standard_Commands_for_Programmable
  - Comma separated parameters recognition.
  - Parameters treated as text, processed by the user program.
  - Option to process large raw data parameters.
+
+## Checking the setup
+Errors found while registering commands can be checked once all the
+commands are registered:
+ - Storage overflows (see the `SCPI_MAX_...` options).
+ - Two commands with the same hash (only the first one can be executed).
+ - Two tokens that accept the same short or long form, e.g. `STATus` and
+   `STATe` (`STAT` always selects the first one).
+
+```cpp
+if (my_instrument.HasSetupError()) {
+  my_instrument.PrintDebugInfo(Serial);
+}
+```
+`GetSetupErrors()` returns the individual error flags.  
+Commands are stored as hashes of `SCPI_HASH_TYPE` size (`uint8_t` by
+default). If two commands get the same hash, use `uint16_t` or `uint32_t`.  
+See the Configuration_Options example for details.
+
+## Using the library in more than one file
+The library code is compiled where `Vrekrer_scpi_parser.h` is included, so
+the configuration `#define`s (`SCPI_MAX_COMMANDS`, etc.) can be set in the
+sketch. When more than one file of a project uses the parser, the code must
+be compiled in only one of them, otherwise the linker reports
+`multiple definition of ...` errors.
+
+Put the options in a header of your own and include it everywhere, so all
+the files see the same configuration:
+```cpp
+// scpi_config.h
+#pragma once
+#define SCPI_MAX_COMMANDS 30
+#include "Vrekrer_scpi_parser.h"
+extern SCPI_Parser my_instrument;
+```
+In the main `.ino` file (code compiled here):
+```cpp
+#include "scpi_config.h"
+SCPI_Parser my_instrument;
+```
+In every other `.cpp` file:
+```cpp
+#define VREKRER_SCPI_PARSER_NO_IMPL
+#include "scpi_config.h"
+```
