@@ -133,6 +133,23 @@ class SCPI_Parser {
                        SCPI_caller_t caller);
   //Set the function to be used by the error handler.
   void SetErrorHandler(SCPI_caller_t caller);
+  ///Errors found while registering commands.
+  struct SetupErrors {
+    ///Command storage overflow error
+    bool command_overflow = false;
+    ///Token storage overflow error
+    bool token_overflow = false;
+    ///Branch (SCPI_Commands) storage overflow error
+    bool branch_overflow = false;
+    ///Special command storage overflow error
+    bool special_command_overflow = false;
+    ///A command got the same hash as a registered one
+    bool hash_collision = false;
+  };
+  //Returns the errors found while registering commands
+  SetupErrors GetSetupErrors() const;
+  //Returns true if any error was found while registering commands
+  bool HasSetupError() const;
   ///SCPI Error codes.
   enum class ErrorCode{
     ///No error
@@ -179,17 +196,8 @@ class SCPI_Parser {
   const uint8_t max_tokens = SCPI_MAX_TOKENS;
   //Max number of registered commands.
   const uint8_t max_commands = SCPI_MAX_COMMANDS;
-  //Internal errors container
-  struct internal_errors {
-    //Command storage overflow error
-    bool command_overflow = false;
-    //Token storage overflow error
-    bool token_overflow = false;
-    //Branch (SCPI_Commands) storage overflow error
-    bool branch_overflow = false;
-    //Special command storage overflow error
-    bool special_command_overflow = false;
-  } setup_errors;
+  //Errors found while registering commands
+  SetupErrors setup_errors;
   //Hash result for unknown commands
   const scpi_hash_t unknown_hash = 0;
   //Hash reserved for invalid commands

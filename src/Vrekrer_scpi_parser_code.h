@@ -198,6 +198,11 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   setup_errors.command_overflow |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
+  //Only the first command with a given hash can be executed
+  if (code != invalid_hash)
+    for (uint8_t i = 0; i < codes_size_; i++)
+      if (valid_codes_[i] == code) setup_errors.hash_collision = true;
+
   valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
@@ -235,6 +240,32 @@ void SCPI_Parser::RegisterCommand(const __FlashStringHelper* command,
 */
 void SCPI_Parser::SetErrorHandler(SCPI_caller_t caller){
   callers_[max_commands] = caller;
+}
+
+/*!
+ Returns the errors found while registering commands.
+
+ Example:  
+  ``if (my_instrument.GetSetupErrors().hash_collision) {...}``
+ @see HasSetupError
+ @see PrintDebugInfo
+*/
+SCPI_Parser::SetupErrors SCPI_Parser::GetSetupErrors() const {
+  return setup_errors;
+}
+
+/*!
+ Returns true if any error was found while registering commands.
+
+ Call it after all the commands are registered. If it returns true,
+ some commands will not work as expected, use PrintDebugInfo for details.
+*/
+bool SCPI_Parser::HasSetupError() const {
+  return setup_errors.command_overflow
+      or setup_errors.token_overflow
+      or setup_errors.branch_overflow
+      or setup_errors.special_command_overflow
+      or setup_errors.hash_collision;
 }
 
 

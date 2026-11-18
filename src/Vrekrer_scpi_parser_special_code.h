@@ -28,6 +28,11 @@ void SCPI_Parser::RegisterSpecialCommand(char* command,
   setup_errors.branch_overflow |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
+  //Only the first special command with a given hash can be executed
+  if (code != invalid_hash)
+    for (uint8_t i = 0; i < special_codes_size_; i++)
+      if (valid_special_codes_[i] == code) setup_errors.hash_collision = true;
+
   valid_special_codes_[special_codes_size_] = code;
   special_callers_[special_codes_size_] = caller;
   special_codes_size_++;
