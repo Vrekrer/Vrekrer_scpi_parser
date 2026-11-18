@@ -179,7 +179,7 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
   bool overflow_error = command_tokens.overflow_error;
   overflow_error |= (tree_length_+command_tokens.Size()) 
                     > command_tokens.storage_size;
-  setup_errors.command_overflow |= overflow_error;
+  setup_errors.branch_overflow |= overflow_error;
   if (overflow_error) code = invalid_hash;
 
   valid_codes_[codes_size_] = code;
