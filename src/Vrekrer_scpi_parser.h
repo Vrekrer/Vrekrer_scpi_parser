@@ -200,6 +200,12 @@ class SCPI_Parser {
   void AddToken_(char* token);
   //Get a hash from a command
   scpi_hash_t GetCommandCode_(SCPI_Commands& commands);
+  struct CommandCode {
+    scpi_hash_t code;
+    bool invalid;
+  };
+  // Registers the tokens and checks the command before storing its callback.
+  CommandCode PrepareCommand_(char* command);
   //Number of stored tokens
   uint8_t tokens_size_ = 0;
   //Storage for tokens

@@ -14,32 +14,18 @@ void DoNothing(SCPI_C, Stream&) {}
 */
 void SCPI_Parser::RegisterSpecialCommand(char* command, 
                                          SCPI_special_caller_t caller) {
-  SCPI_Commands command_tokens(command);
-  for (uint8_t i = 0; i < command_tokens.Size(); i++)
-    this->AddToken_(command_tokens[i]);
-  const scpi_hash_t code = this->GetCommandCode_(command_tokens);
-
-  const int branch_length = tree_length_ + command_tokens.Size();
-  const bool branch_too_long =
-      command_tokens.overflow_error
-      or (branch_length > command_tokens.storage_size);
-  setup_errors.branch_overflow |= branch_too_long;
+  const CommandCode result = PrepareCommand_(command);
 
   if (special_codes_size_ >= max_special_commands) {
     setup_errors.special_command_overflow = true;
     return;
   }
 
-  const bool registration_error =
-      branch_too_long
-      or (code == invalid_hash)
-      or (code == unknown_hash);
-
-  if (registration_error) {
+  if (result.invalid) {
     valid_special_codes_[special_codes_size_] = invalid_hash;
     special_callers_[special_codes_size_] = DoNothing;
   } else {
-    valid_special_codes_[special_codes_size_] = code;
+    valid_special_codes_[special_codes_size_] = result.code;
     special_callers_[special_codes_size_] = caller;
   }
   special_codes_size_++;

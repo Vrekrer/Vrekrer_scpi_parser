@@ -156,13 +156,7 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
   this->SetCommandTreeBase(msg_buffer_);
 }
 
-/*!
- Registers a command and its callback.
- If registration fails and space remains, stores an invalid entry with DoNothing as its callback.
- @param command  New valid command.
- @param caller  Function to call when the command is received.
-*/
-void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
+SCPI_Parser::CommandCode SCPI_Parser::PrepareCommand_(char* command) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
@@ -174,21 +168,32 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
       or (branch_length > command_tokens.storage_size);
   setup_errors.branch_overflow |= branch_too_long;
 
+  const bool invalid =
+      branch_too_long
+      or (code == invalid_hash)
+      or (code == unknown_hash);
+  return {code, invalid};
+}
+
+/*!
+ Registers a command and its callback.
+ If registration fails and space remains, stores an invalid entry with DoNothing as its callback.
+ @param command  New valid command.
+ @param caller  Function to call when the command is received.
+*/
+void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
+  const CommandCode result = PrepareCommand_(command);
+
   if (codes_size_ >= max_commands) {
     setup_errors.command_overflow = true;
     return;
   }
 
-  const bool registration_error =
-      branch_too_long
-      or (code == invalid_hash)
-      or (code == unknown_hash);
-
-  if (registration_error) {
+  if (result.invalid) {
     valid_codes_[codes_size_] = invalid_hash;
     callers_[codes_size_] = DoNothing;
   } else {
-    valid_codes_[codes_size_] = code;
+    valid_codes_[codes_size_] = result.code;
     callers_[codes_size_] = caller;
   }
   codes_size_++;
