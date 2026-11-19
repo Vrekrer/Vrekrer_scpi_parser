@@ -2,11 +2,11 @@
 Vrekrer_scpi_parser library.
 SCPI Dimmer example.
 
-Demonstrates the control of the brightness of a LED using SCPI commands.
+Demonstrates how to control the brightness of an LED with SCPI commands.
 
 Hardware required:
-A LED attached to digital pin 9
-or a resistor from pin 9 to pin 13 to use the built-in LED
+An LED connected to digital pin 9, or a resistor between pins 9 and 13 to
+use the built-in LED.
 
 Commands:
   *IDN?
@@ -14,10 +14,10 @@ Commands:
 
   SYSTem:LED:BRIGhtness <value>
     Sets the LED's brightness to <value>
-    Valid values : 0 (OFF) to 10 (Full brightness)
+    Valid values range from 0 (off) to 10 (full brightness).
 
   SYSTem:LED:BRIGhtness?
-    Queries the current LED's brightness value
+    Queries the LED's current brightness.
 
   SYSTem:LED:BRIGhtness:INCrease
     Increases the LED's brightness value by one
@@ -62,7 +62,7 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void SetBrightness(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  // For simplicity no bad parameter check is done.
+  // Clamp the first parameter to the supported brightness range.
   if (parameters.Size() > 0) {
     brightness = constrain(String(parameters[0]).toInt(), 0, 10);
     analogWrite(ledPin, intensity[brightness]);

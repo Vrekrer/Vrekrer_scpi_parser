@@ -2,12 +2,12 @@
 Vrekrer_scpi_parser library.
 Numeric suffixes example.
 
-Demonstrates the use of numeric suffix capable commands
-to control digital outputs and reading digital inputs.
+Demonstrates how to use commands with numeric suffixes to control digital
+outputs and read digital inputs.
 
 Digital Inputs:
  DIn0 = pin 8
- DIn1 = pin 8
+ DIn1 = pin 9
  DIn2 = pin 10
  DIn3 = pin 11
  DIn4 = pin 12
@@ -36,7 +36,7 @@ Commands:
 
 See the code comments for further information and examples.
 
-This example does not follows the recommended SCPI standard command syntax.
+This example uses custom commands outside the standard SCPI command set.
 */
 
 
@@ -82,13 +82,13 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 
 void QueryDigital_Input(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   //DIn<index>?
-  //Queries the logic state of DIn[index] pin
+  // Reads the logic state of the pin in DIn[index].
   //Return values are "HIGH" or "LOW"
   //Examples:
-  // DIn0?     (Queries the state of DOut[0] pin)
-  // DI5?      (Queries the state of DOut[5] pin)
+  // DIn0?     (Reads DIn[0].)
+  // DI5?      (Reads DIn[5].)
 
-  //Get the numeric suffix/index (if any) from the commands
+  // Extract the pin index from the numeric suffix, if present.
   String header = String(commands.Last());
   header.toUpperCase();
   int suffix = -1;
@@ -106,13 +106,13 @@ void QueryDigital_Input(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 
 void QueryDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   //DOut<index>?
-  //Queries the logic state of DOut[index] pin
+  // Reads the logic state of the pin in DOut[index].
   //Return values are "HIGH" or "LOW"
   //Examples:
-  // DO4?      (Queries the state of DOut[4] pin)
-  // DOut6?    (This does nothing as DOut[6] does not exists)
+  // DO4?      (Reads DOut[4].)
+  // DOut6?    (Index 6 is outside the array.)
 
-  //Get the numeric suffix/index (if any) from the commands
+  // Extract the pin index from the numeric suffix, if present.
   String header = String(commands.Last());
   header.toUpperCase();
   int suffix = -1;
@@ -130,7 +130,7 @@ void QueryDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) 
 
 void WriteDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   //DOut<index> state
-  //Sets the logic state of DOut[index] pin
+  // Sets the logic state of the pin in DOut[index].
   //Valid states are : "HIGH", "LOW", "ON", "OFF", "1" and "0"
   //and any lowercase/uppercase combinations
   //Examples:
@@ -138,14 +138,13 @@ void WriteDigital_Output(SCPI_C commands, SCPI_P parameters, Stream& interface) 
   // DO2 Off     (Sets DOut[2] to LOW)
   // DOUT0 1     (Sets DOut[0] to HIGH)
 
-  //Get the numeric suffix/index (if any) from the commands
+  // Extract the pin index from the numeric suffix, if present.
   String header = String(commands.Last());
   header.toUpperCase();
   int suffix = -1;
   sscanf(header.c_str(),"%*[DOUT]%u", &suffix);
 
-  //If the suffix is valid,
-  //use the first parameter (if valid) to set the digital Output
+  // Use the first parameter to set the output at the selected index.
   String first_parameter = String(parameters.First());
   first_parameter.toUpperCase();
   if ( (suffix >= 0) && (suffix < 6) ) {

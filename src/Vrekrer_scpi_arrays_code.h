@@ -45,23 +45,22 @@ uint8_t SCPI_String_Array::Size() const {
 
 // ## SCPI_Commands member functions ##
 
-///Dummy constructor.
+/// Default constructor.
 SCPI_Commands::SCPI_Commands(){}
 
 /*!
- Constructor that extracts and tokenize a command from a message.  
+ Extracts the command header and splits it into tokens.
  @param message  Message to process.
 
- The message is processed until a space, tab or the end of the string is 
- found, the rest is available at not_processed_message.  
- The processed part is split on the ':' characters, the resulting parts 
- (tokens) are stored in the array.
+ The header ends at the first space, tab, or end of the string.
+ The remaining text is available through not_processed_message.
+ The header is split at colons, and the tokens are stored in the array.
 */
 SCPI_Commands::SCPI_Commands(char* message) {
   char* token = message;
-  // Trim leading spaces and tabs
+  // Skip leading whitespace.
   while (isspace(*token)) token++;
-  // Save parameters and multicommands for later
+  // Keep a pointer to the rest of the message.
   not_processed_message = strpbrk(token, " \t");
   if (not_processed_message != NULL) {
    not_processed_message[0] = '\0';
@@ -77,7 +76,7 @@ SCPI_Commands::SCPI_Commands(char* message) {
 
 // ## SCPI_Parameters member functions ##
 
-/// Dummy constructor.
+/// Default constructor.
 SCPI_Parameters::SCPI_Parameters(){}
 
 
@@ -85,8 +84,8 @@ SCPI_Parameters::SCPI_Parameters(){}
  Constructor that extracts and splits parameters from a message.  
  @param message[in,out]  Message to process.
 
- The message is split on the ',' characters, the resulting parts 
- (parameters) are stored in the array after trimming any start spaces.
+ The message is split at commas. Leading whitespace is removed from each
+ parameter before it is stored in the array.
 */
 SCPI_Parameters::SCPI_Parameters(char* message) {
   char* parameter = message;
@@ -97,5 +96,5 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
     this->Append(parameter);
     parameter = strtok(NULL, ",");
   }
-  //TODO add support for strings parameters (do not split parameters inside "")
+  // TODO: Preserve commas inside quoted string parameters.
 }

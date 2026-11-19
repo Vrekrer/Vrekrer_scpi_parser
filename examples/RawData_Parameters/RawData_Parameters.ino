@@ -3,18 +3,13 @@ Vrekrer_scpi_parser library.
 SCPI Special Commands example.
 
 Demonstrates how to set up and use special commands.
-Special commands allow the user to write custom code for reading and
-processing the message parameters.
-
-This can be used for:
- - Read Strings or raw data that contain special characters.
- - Read data larger than the input buffer.
- - Real time processing of the data.
- - etc.
+Special command callbacks read and process message parameters directly
+from the Stream. They can read text or raw data containing special characters,
+handle data larger than the input buffer, and process it as it arrives.
 */
 
-//For using special commands, SCPI_MAX_SPECIAL_COMMANDS must be defined.
-//See the Configuration_Options example for further information.
+// Set SCPI_MAX_SPECIAL_COMMANDS to enable special commands.
+// See the Configuration_Options example for details.
 //We will use only one special command here.
 #define SCPI_MAX_SPECIAL_COMMANDS 1  //default 0
 
@@ -43,18 +38,13 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 /*
-## Normal handler definition. ##
-This procedure will be called when the terminal chars (here '\n' line feed) or
-the multicommand (';') char are received.
-The main loop will not be stopped until all the message is received.
-The received commands will be split using ':'.
-The received parameters will be split using ',' and trailing spaces will
-be ignored.
-If a timeout or buffer overflow error happens, the entire received message will
-be discarded, and this procedure will not be called.
+The normal callback runs once the parser receives a complete message.
+Semicolons separate commands in the message. Colons separate tokens in each
+command, and commas separate parameters. The parser trims leading whitespace
+from each parameter. A timeout or buffer overflow prevents the callback from running.
 */
 void NormalEcho(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  //Here we print the recieved commands.
+  // Print the command tokens.
   for (size_t i = 0; i < commands.Size(); i++) {
     interface.print(commands[i]);
     if (i < commands.Size()-1) {
@@ -64,25 +54,23 @@ void NormalEcho(SCPI_C commands, SCPI_P parameters, Stream& interface) {
     }
   }
   
-  //Here we print the recieved parameters.
+  // Print the received parameters.
   for (size_t i = 0; i < parameters.Size(); i++) {
     interface.print(parameters[i]);
     if (i < parameters.Size()-1)
       interface.print(", ");  
   }
-  interface.println(); // Send '\n' as terminal char.
+  interface.println(); // Send a newline as the message terminator.
 }
 
 
 /*
-## Special handler definition. ##
-This procedure will be called when the first ' ' (space) is received.
-This only includes the command string.
-The main loop is stopped without reading the parameters.
--Note- The void template include only commands an interface.
+The special callback runs when the parser reads the space after the command
+header. It receives the command tokens and the Stream. The callback reads
+the remaining bytes directly from the Stream while the main loop waits.
 */
 void SpecialEcho(SCPI_C commands, Stream& interface) {
-  //Same as in NormalEcho, here we print the recieved commands.
+  // Print the command tokens, as in NormalEcho().
   for (size_t i = 0; i < commands.Size(); i++) {
     interface.print(commands[i]);
     if (i < commands.Size()-1) {
@@ -92,17 +80,16 @@ void SpecialEcho(SCPI_C commands, Stream& interface) {
     }
   }
 
-  //Here we print back to the interface all the recieved chars
+  // Echo the remaining bytes to the stream.
   while (true) {
     if (interface.available()) {
       interface.print(char(interface.peek()));
       interface.flush();
-      if (interface.read() == '\n') break; //End if a '\n' is recieved
+      if (interface.read() == '\n') break; // Stop at the newline.
     }
-  //Caution!!
-  //Infinite loop
-  //Any unexpected or missing data should be handled here.
+  // This loop waits indefinitely for a newline. Handle missing or
+  // unexpected data here in a real application.
   }
 }
-//A space ' ' after the command string is needed to trigger an special command.
+// A special command requires a space after its header.
 //"ECHO:SPEcial;" or "ECHO:SPEcial\n" will not call SpecialEcho.

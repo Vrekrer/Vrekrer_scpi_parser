@@ -1,12 +1,9 @@
 /*
 Vrekrer_scpi_parser library.
-SCPI Errors Handling example.
+SCPI error handling example.
 
-Demonstrate how to handle communication errors.
-These include : 
-  Message buffer overflow,
-  Timeout before receiving the termination chars (uncompleted messages)
-  and receiving an unknown command.
+Demonstrates how to handle buffer overflows, timeouts while waiting for
+a complete message, and unknown commands.
 
 Hardware required: None
 
@@ -15,7 +12,7 @@ Commands:
     Gets the instrument's identification string
 
   SYSTem:ERRor?
-    Reads the last error occurred and then delete it.
+    Reads and clears the last error.
 */
 
 
@@ -27,16 +24,16 @@ SCPI_Parser my_instrument;
 void setup()
 {
   my_instrument.RegisterCommand(F("*IDN?"), &Identify);
-  my_instrument.RegisterCommand(F("SYSTem:ERRor?"), &GetLastEror);
+  my_instrument.RegisterCommand(F("SYSTem:ERRor?"), &GetLastError);
   my_instrument.SetErrorHandler(&myErrorHandler);
-  //Not setting an error handler will just ignore the errors.
+  // The default error handler ignores errors.
 
   Serial.begin(9600);
 
   /*
-  Timeout time can be changed even during program execution
+  You can change the timeout while the program is running.
   */
-  my_instrument.timeout = 10; //value in miliseconds. Default value = 10
+  my_instrument.timeout = 10; // In milliseconds. Default value: 10.
 
 }
 
@@ -50,7 +47,7 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
             F("Vrekrer,Error Handling Example,#00," VREKRER_SCPI_VERSION));
 }
 
-void GetLastEror(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void GetLastError(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   switch(my_instrument.last_error){
     case my_instrument.ErrorCode::BufferOverflow: 
       interface.println(F("Buffer overflow error"));
@@ -69,7 +66,7 @@ void GetLastEror(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void myErrorHandler(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  //This function is called every time an error occurs
+  // The parser calls this function when a communication error occurs.
 
   /* The error type is stored in my_instrument.last_error
      Possible errors are:
@@ -79,10 +76,8 @@ void myErrorHandler(SCPI_C commands, SCPI_P parameters, Stream& interface) {
        SCPI_Parser::ErrorCode::BufferOverflow
   */
 
-  /* For BufferOverflow errors, the rest of the message, still in the interface
-  buffer or not yet received, will be processed later and probably 
-  trigger another kind of error.
-  Here we flush the incomming message*/
+  /* After a buffer overflow, any bytes still arriving or waiting in the stream
+     may cause another error. Read and discard those bytes here. */
   if (my_instrument.last_error == SCPI_Parser::ErrorCode::BufferOverflow) {
     delay(2);
     while (interface.available()) {
@@ -92,7 +87,7 @@ void myErrorHandler(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   }
 
   /*
-  For UnknownCommand errors, you can get the received unknown command and
-  parameters from the commands and parameters variables.
+  For UnknownCommand errors, use commands and parameters to inspect the
+  received message.
   */
 }

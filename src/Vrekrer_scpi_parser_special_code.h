@@ -10,7 +10,7 @@ void DoNothing(SCPI_C, Stream&) {}
  Registers a special command and its callback.
  If registration fails and space remains, stores an invalid entry with DoNothing as its callback.
  @param command  New valid command.
- @param caller  Procedure associated to the valid command.
+ @param caller  Function to call when the special command is received.
 */
 void SCPI_Parser::RegisterSpecialCommand(char* command, 
                                          SCPI_special_caller_t caller) {

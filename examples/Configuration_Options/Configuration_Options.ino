@@ -2,13 +2,14 @@
 Vrekrer_scpi_parser library.
 Configuration options example.
 
-Demonstrates how to configure the library options
+Demonstrates how to configure the library.
 
-Vrekrer_scpi_parser library is designed for reduced RAM usage, needed for low 
-RAM microcontrollers.
-You can fine tune, or expand the default library capabilities by defining 
-(before the library include)  the following macros:
-SCPI_ARRAY_SYZE : Max branches of the command tree and max number of parameters.
+The library is designed for microcontrollers with limited RAM.
+Define the following macros before including the library header to adjust
+its capacity and memory usage.
+
+SCPI_ARRAY_SIZE : Maximum number of keywords in a command path or parameters
+                  in a message.
 SCPI_MAX_TOKENS : Max number of valid tokens.
 SCPI_MAX_COMMANDS : Max number of registered commands.
 SCPI_MAX_SPECIAL_COMMANDS : Max number of special commands.
@@ -17,9 +18,8 @@ SCPI_HASH_TYPE : Integer size used for hashes.
 */
 
 /*
-As an example, the following command tree, including only the 
-SCPI Required Commands and IEEE Mandated Commands 
-will be analyzed and implemented with optimal RAM usage.
+This example uses the following tree of required SCPI and IEEE commands
+to illustrate how to choose library settings.
 
 STATus
     :OPERation
@@ -51,11 +51,11 @@ SYSTem
 */
 
 /*
-Largest branch needed = 3
-i.e. STATus:OPERation:ENABle or SYSTem:ERRor:NEXT?
+The longest command paths contain three keywords.
+Examples include STATus:OPERation:ENABle and SYSTem:ERRor:NEXT?.
 */
-#define SCPI_ARRAY_SYZE 3 //Default value = 6
-//This also sets the max number of parameters
+#define SCPI_ARRAY_SIZE 3 // Default value: 6
+// This also sets the maximum number of parameters.
 
 /*
 Valid Tokens: 
@@ -116,25 +116,24 @@ Total number of valid commands: 25
 #define SCPI_MAX_COMMANDS 25 //Default value = 20
 
 /*
-No special commands used
-See RawData_Parameters example for further details.
+This example uses no special commands.
+See the RawData_Parameters example for details.
 */
 #define SCPI_MAX_SPECIAL_COMMANDS 0 //Default value = 0
 
 /*
-The message buffer should be large enough to fit all the incoming message
-For example, the multicommand message
+The buffer must hold the entire incoming message.
+For example, this message contains several commands
 "*RST; *cls; status:operation:enable; status:questionable:enable;\n"
-will need at least 67 byte buffer length.
+and needs a buffer of at least 67 bytes.
 */
 #define SCPI_BUFFER_LENGTH 128 //Default value = 64
 
 /*
-In order to reduce RAM usage, Vrekrer_scpi_parser library (ver. 0.42 and later)
-uses a hash algorithm to store and compare registered commands. In very rare 
-situations this might end in hash crashes (two commands have the same hash)
+Since version 0.42, the library has stored command hashes to reduce RAM usage.
+A collision occurs when two commands have the same hash.
 
-If needed, to avoid hash crashes, change SCPI_HASH_TYPE to uint16_t or uint32_t
+Use uint16_t or uint32_t for SCPI_HASH_TYPE to reduce the chance of collisions.
 */
 #define SCPI_HASH_TYPE uint8_t //Default value = uint8_t
 
@@ -146,58 +145,56 @@ SCPI_Parser my_instrument;
 
 void setup() {
   /*
-  To fix hash crashes, the hashing magic numbers can be changed before 
-  registering commands.
-  Use prime numbers up to the SCPI_HASH_TYPE size.
+  You can change the hash constants before registering commands to resolve
+  collisions. Use prime numbers that fit in SCPI_HASH_TYPE.
   */
   my_instrument.hash_magic_number = 37; //Default value = 37
   my_instrument.hash_magic_offset = 7;  //Default value = 7
 
   /*
-  Timeout time can be changed even during program execution
-  See Error_Handling example for further details.
+  You can change the timeout while the program is running.
+  See the Error_Handling example for details.
   */
-  my_instrument.timeout = 10; //value in miliseconds. Default value = 10
+  my_instrument.timeout = 10; // In milliseconds. Default value: 10.
 
 
   my_instrument.SetCommandTreeBase(F("STATus:OPERation"));
-    my_instrument.RegisterCommand(F(":CONDition?"), &DoNothing);
-    my_instrument.RegisterCommand(F(":ENABle"), &DoNothing);
-    my_instrument.RegisterCommand(F(":EVENt?"), &DoNothing);
+    my_instrument.RegisterCommand(F(":CONDition?"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":ENABle"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":EVENt?"), &IgnoreCommand);
   my_instrument.SetCommandTreeBase(F("STATus:QUEStionable"));
-    my_instrument.RegisterCommand(F(":CONDition?"), &DoNothing);
-    my_instrument.RegisterCommand(F(":ENABle"), &DoNothing);
-    my_instrument.RegisterCommand(F(":EVENt?"), &DoNothing);
+    my_instrument.RegisterCommand(F(":CONDition?"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":ENABle"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":EVENt?"), &IgnoreCommand);
   my_instrument.SetCommandTreeBase(F("STATus"));
-    my_instrument.RegisterCommand(F(":OPERation?"), &DoNothing);
-    my_instrument.RegisterCommand(F(":QUEStionable?"), &DoNothing);
-    my_instrument.RegisterCommand(F(":PRESet"), &DoNothing);
+    my_instrument.RegisterCommand(F(":OPERation?"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":QUEStionable?"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":PRESet"), &IgnoreCommand);
   my_instrument.SetCommandTreeBase(F("SYSTem"));
-    my_instrument.RegisterCommand(F(":ERRor?"), &DoNothing);
-    my_instrument.RegisterCommand(F(":ERRor:NEXT?"), &DoNothing);
-    my_instrument.RegisterCommand(F(":VERSion?"), &DoNothing);
+    my_instrument.RegisterCommand(F(":ERRor?"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":ERRor:NEXT?"), &IgnoreCommand);
+    my_instrument.RegisterCommand(F(":VERSion?"), &IgnoreCommand);
   my_instrument.SetCommandTreeBase(F(""));
-  my_instrument.RegisterCommand(F("*CLS"), &DoNothing);
-  my_instrument.RegisterCommand(F("*ESE"), &DoNothing);
-  my_instrument.RegisterCommand(F("*ESE?"), &DoNothing);
-  my_instrument.RegisterCommand(F("*ESR"), &DoNothing);
+  my_instrument.RegisterCommand(F("*CLS"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*ESE"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*ESE?"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*ESR"), &IgnoreCommand);
   my_instrument.RegisterCommand(F("*IDN?"), &Identify);
-  my_instrument.RegisterCommand(F("*OPC"), &DoNothing);
-  my_instrument.RegisterCommand(F("*OPC?"), &DoNothing);
-  my_instrument.RegisterCommand(F("*RST"), &DoNothing);
-  my_instrument.RegisterCommand(F("*SRE"), &DoNothing);
-  my_instrument.RegisterCommand(F("*SRE?"), &DoNothing);
-  my_instrument.RegisterCommand(F("*STB"), &DoNothing);
-  my_instrument.RegisterCommand(F("*TST?"), &DoNothing);
-  my_instrument.RegisterCommand(F("*WAI"), &DoNothing);
+  my_instrument.RegisterCommand(F("*OPC"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*OPC?"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*RST"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*SRE"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*SRE?"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*STB"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*TST?"), &IgnoreCommand);
+  my_instrument.RegisterCommand(F("*WAI"), &IgnoreCommand);
 
   Serial.begin(9600);
   while (!Serial) {;}
   
   /*
   void SCPI_Parser::PrintDebugInfo(Stream &interface)
-  Will print any set up error to a Stream interface.
-  Use it only to test your setup  (not needed for normal execution).
+  Prints setup errors to a Stream. Use it to check your configuration.
   */
   my_instrument.PrintDebugInfo(Serial);
 }
@@ -205,16 +202,15 @@ void setup() {
 void loop() {
   /*
   void SCPI_Parser::ProcessInput(Stream &interface, const char *term_chars)
-  will process any message from a stream inteface.
-  The used interface will be passed to the Registered command handlers.
+  reads messages from a Stream and passes that stream to the command callbacks.
   */
   my_instrument.ProcessInput(Serial, "\n");
 
   /*
   void SCPI_Parser::Execute(char *message, Stream &interface)
   can also be used to process a message.
-  Use this if the message source is not an Stream.
-  A stream like object is still needed for passing it to the command handlers.
+  Use this when the message comes from another source.
+  The command callbacks still receive a Stream.
   i.e.
     my_instrument.Execute(GetEthernetMsg(), Serial)   
   */
@@ -225,7 +221,7 @@ void Identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
                       VREKRER_SCPI_VERSION));
 }
 
-void DoNothing(SCPI_C commands, SCPI_P parameters, Stream& interface) {
+void IgnoreCommand(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 }
 
 void DoSpe(SCPI_C commands, Stream& interface) {
