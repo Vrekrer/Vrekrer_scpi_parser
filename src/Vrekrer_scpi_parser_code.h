@@ -4,7 +4,8 @@
 
 
 //Do nothing function
-void DefaultErrorHandler(SCPI_C c, SCPI_P p, Stream& interface) {}
+void DoNothing(SCPI_C, SCPI_P, Stream&) {}
+static constexpr auto& DefaultErrorHandler = DoNothing;
 
 
 // ## SCPI_Registered_Commands member functions. ##
@@ -160,30 +161,40 @@ void SCPI_Parser::SetCommandTreeBase(const __FlashStringHelper* tree_base) {
 }
 
 /*!
- Registers a new valid command and associate a procedure to it.
+ Registers a command and its callback.
+ If registration fails and space remains, stores an invalid entry with DoNothing as its callback.
  @param command  New valid command.
  @param caller  Procedure associated to the valid command.
 */
 void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
+  SCPI_Commands command_tokens(command);
+  for (uint8_t i = 0; i < command_tokens.Size(); i++)
+    this->AddToken_(command_tokens[i]);
+  const scpi_hash_t code = this->GetCommandCode_(command_tokens);
+
+  const int branch_length = tree_length_ + command_tokens.Size();
+  const bool branch_too_long =
+      command_tokens.overflow_error
+      or (branch_length > command_tokens.storage_size);
+  setup_errors.branch_overflow |= branch_too_long;
+
   if (codes_size_ >= max_commands) {
     setup_errors.command_overflow = true;
     return;
   }
-  SCPI_Commands command_tokens(command);
-  for (uint8_t i = 0; i < command_tokens.Size(); i++)
-    this->AddToken_(command_tokens[i]);
-  scpi_hash_t code = this->GetCommandCode_(command_tokens);
-  
-  //Check for errors
-  if (code == unknown_hash) code = invalid_hash;
-  bool overflow_error = command_tokens.overflow_error;
-  overflow_error |= (tree_length_+command_tokens.Size()) 
-                    > command_tokens.storage_size;
-  setup_errors.branch_overflow |= overflow_error;
-  if (overflow_error) code = invalid_hash;
 
-  valid_codes_[codes_size_] = code;
-  callers_[codes_size_] = caller;
+  const bool registration_error =
+      branch_too_long
+      or (code == invalid_hash)
+      or (code == unknown_hash);
+
+  if (registration_error) {
+    valid_codes_[codes_size_] = invalid_hash;
+    callers_[codes_size_] = DoNothing;
+  } else {
+    valid_codes_[codes_size_] = code;
+    callers_[codes_size_] = caller;
+  }
   codes_size_++;
 }
 
