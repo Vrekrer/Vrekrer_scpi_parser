@@ -306,11 +306,14 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
       message_length_ = 0;
       return NULL;
     }
-    
+    msg_buffer_[message_length_] = '\0';
+
     #if SCPI_MAX_SPECIAL_COMMANDS
-    // Check for a special command at the first space.
-    if (strcspn(msg_buffer_, " ") == message_length_- 1){
-      msg_buffer_[message_length_ - 1] =  '\0';
+    // Check for a special command at the first space or tab.
+    char* separator = strpbrk(msg_buffer_, " \t");
+    if (separator == &msg_buffer_[message_length_ - 1]) {
+      const char separator_char = *separator;
+      *separator = '\0';
       tree_code_ = 0;
       SCPI_Commands commands(msg_buffer_);
       scpi_hash_t code = this->GetCommandCode_(commands);
@@ -321,16 +324,13 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
           return msg_buffer_;
         }
       // Restore the original message for normal command parsing.
-      msg_buffer_[message_length_ - 1] = ' ';
+      *separator = separator_char;
       for (uint8_t i = 0; i < commands.Size()-1; i++)
         commands[i][strlen(commands[i])] = ':';
-      commands.not_processed_message--;
-      commands.not_processed_message[0] = ' ';
     }
     #endif
 
     // Check for the message terminator.
-    msg_buffer_[message_length_] = '\0';
     if (strstr(msg_buffer_, term_chars) != NULL) {
       //Return the received message
       msg_buffer_[message_length_ - strlen(term_chars)] =  '\0';

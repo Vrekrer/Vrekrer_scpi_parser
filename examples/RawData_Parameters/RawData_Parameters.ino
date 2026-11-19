@@ -65,8 +65,8 @@ void NormalEcho(SCPI_C commands, SCPI_P parameters, Stream& interface) {
 
 
 /*
-The special callback runs when the parser reads the space after the command
-header. It receives the command tokens and the Stream. The callback reads
+The special callback runs when the parser reads the first space or tab after
+the command header. It receives the command tokens and the Stream, then reads
 the remaining bytes directly from the Stream while the main loop waits.
 */
 void SpecialEcho(SCPI_C commands, Stream& interface) {
@@ -91,5 +91,5 @@ void SpecialEcho(SCPI_C commands, Stream& interface) {
   // unexpected data here in a real application.
   }
 }
-// A special command requires a space after its header.
+// A special command requires a space or tab after its header.
 //"ECHO:SPEcial;" or "ECHO:SPEcial\n" will not call SpecialEcho.
