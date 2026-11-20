@@ -50,9 +50,9 @@ void SCPI_Parser::AddToken_(char *token) {
  @see SetCommandTreeBase
 */
 scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
-  if (tree_code_ == invalid_hash) return invalid_hash;
+  if (tree_code_.invalid) return invalid_hash;
   scpi_hash_t code;
-  code = (tree_code_ == 0) ? hash_magic_offset : tree_code_;
+  code = (tree_code_.length == 0) ? hash_magic_offset : tree_code_.code;
   if (commands.Size()==0) return unknown_hash;
   //Loop all keywords in the command
   for (uint8_t i = 0; i < commands.Size(); i++) {
@@ -111,26 +111,20 @@ scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
   return code;
 }
 
+void SCPI_Parser::ResetCommandTreeBase_() {
+  tree_code_ = {0, false, 0};
+}
+
 /*!
  Sets the base path for subsequent command registrations.
- @param tree_base  The base path. An empty string selects the root.
+ @param tree_base  The base path. A path with no tokens selects the root.
 */
 void SCPI_Parser::SetCommandTreeBase(char* tree_base) {
-  SCPI_Commands tree_tokens(tree_base);
-  if (tree_tokens.Size() == 0) {
-    tree_code_ = 0;
-    tree_length_ = 0;
-    return;
+  ResetCommandTreeBase_();
+  tree_code_ = PrepareCommand_(tree_base);
+  if (tree_code_.length == 0) {
+    ResetCommandTreeBase_();
   }
-  for (uint8_t i = 0; i < tree_tokens.Size(); i++)
-    AddToken_(tree_tokens[i]);
-  tree_code_ = 0;
-  tree_code_ = this->GetCommandCode_(tree_tokens);
-  tree_length_ = tree_tokens.Size();
-  if (tree_tokens.overflow_error) {
-    setup_errors.branch_overflow = true;
-    tree_code_ = invalid_hash;
-  } 
 }
 
 /*!
@@ -160,19 +154,20 @@ SCPI_Parser::CommandCode SCPI_Parser::PrepareCommand_(char* command) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
-  const scpi_hash_t code = this->GetCommandCode_(command_tokens);
+  CommandCode result = {
+      this->GetCommandCode_(command_tokens), false, command_tokens.Size()};
 
-  const int branch_length = tree_length_ + command_tokens.Size();
+  const int branch_length = tree_code_.length + result.length;
   const bool branch_too_long =
       command_tokens.overflow_error
       or (branch_length > command_tokens.storage_size);
   setup_errors.branch_overflow |= branch_too_long;
 
-  const bool invalid =
+  result.invalid =
       branch_too_long
-      or (code == invalid_hash)
-      or (code == unknown_hash);
-  return {code, invalid};
+      or (result.code == invalid_hash)
+      or (result.code == unknown_hash);
+  return result;
 }
 
 /*!
@@ -251,7 +246,7 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
      next_command++;
     }
 
-    tree_code_ = 0;
+    ResetCommandTreeBase_();
     SCPI_Commands commands(message);
     message = next_command;
     SCPI_Parameters parameters(commands.not_processed_message);
@@ -314,7 +309,7 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     if (separator == &msg_buffer_[message_length_ - 1]) {
       const char separator_char = *separator;
       *separator = '\0';
-      tree_code_ = 0;
+      ResetCommandTreeBase_();
       SCPI_Commands commands(msg_buffer_);
       scpi_hash_t code = this->GetCommandCode_(commands);
       for (uint8_t i = 0; i < special_codes_size_; i++) 

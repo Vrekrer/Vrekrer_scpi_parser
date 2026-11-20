@@ -203,9 +203,12 @@ class SCPI_Parser {
   struct CommandCode {
     scpi_hash_t code;
     bool invalid;
+    uint8_t length; // Number of keywords in the parsed fragment.
   };
   // Registers the tokens and checks the command before storing its callback.
   CommandCode PrepareCommand_(char* command);
+  // Restores the root as the command base.
+  void ResetCommandTreeBase_();
   //Number of stored tokens
   uint8_t tokens_size_ = 0;
   //Storage for tokens
@@ -216,10 +219,8 @@ class SCPI_Parser {
   scpi_hash_t valid_codes_[SCPI_MAX_COMMANDS];
   //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
-  // Hash of the base path used to calculate command hashes (0 for the root).
-  scpi_hash_t tree_code_ = 0;
-  // Number of keywords in the base path (0 for the root).
-  uint8_t tree_length_ = 0;
+  // Hash, validity, and length of the base path. A zero length denotes the root.
+  CommandCode tree_code_ = {0, false, 0};
   //Message buffer.
   char msg_buffer_[SCPI_BUFFER_LENGTH];
   // Number of bytes read into the message buffer.
