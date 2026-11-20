@@ -43,72 +43,78 @@ void SCPI_Parser::AddToken_(char *token) {
 /*!
  Calculates the hash of a command.
  @param commands  Keywords of the command.
- @return The command hash, unknown_hash for an empty or unrecognized command,
-         or invalid_hash if the base path is invalid.
+ @return The command hash, token count, and an invalid flag. The flag is set
+         if the command is empty or unrecognized, or the base path is invalid.
 
- The calculation starts with the hash of the base path when one is set.
+ The calculation starts with the TreeBase hash when a base is set.
  @see SetCommandTreeBase
 */
-scpi_hash_t SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
-  if (tree_code_.invalid) return invalid_hash;
-  scpi_hash_t code;
-  code = (tree_code_.length == 0) ? hash_magic_offset : tree_code_.code;
-  if (commands.Size()==0) return unknown_hash;
-  //Loop all keywords in the command
+SCPI_Parser::CommandCode SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
+  const CommandCode invalid_command = {0, true, commands.Size()};
+  if (tokens_size_ == 0  // No registered tokens to match.
+      or commands.Size() == 0  // Empty command.
+      or tree_code_.invalid) {
+    return invalid_command;
+  }
+
+  // Start with the TreeBase hash. At the root, use the offset.
+  scpi_hash_t code =
+      (tree_code_.length == 0) ? hash_magic_offset : tree_code_.code;
+
   for (uint8_t i = 0; i < commands.Size(); i++) {
-    // Get the length of the current keyword.
-    size_t header_length = strlen(commands[i]);
-    // Exclude the query marker from the last keyword when present.
-    bool is_query = false;
-    if (i == commands.Size() - 1) {
-      is_query = (commands[i][header_length - 1] == '?');
-      if (is_query) header_length--;
-    }
+    const char* keyword = commands[i];
+    size_t keyword_length = strlen(keyword);
 
-    //Loop over all the known tokens
-    for (uint8_t j = 0; j < tokens_size_; j++) {
-      // Find the lengths of the token's short and long forms.
+    const bool is_query =
+        (i + 1 == commands.Size())  // Last keyword only.
+        and (keyword[keyword_length - 1] == '?');
+    if (is_query) keyword_length--;
+
+    // Find the first registered token that matches this keyword.
+    uint8_t token_index = 0;
+    for (; token_index < tokens_size_; token_index++) {
+      const char* token = tokens_[token_index];
+      // The initial uppercase letters define the short form.
       size_t short_length = 0;
-      while (isupper(tokens_[j][short_length])) short_length++;
-      size_t long_length = strlen(tokens_[j]);
+      while (isupper(token[short_length])) short_length++;
+      size_t long_length = strlen(token);
 
-      // Ignore trailing digits when the token allows a numeric suffix.
-      if ( (tokens_[j][long_length - 1] == '#')
-         and (commands[i][header_length - 1] != '#') ) {
+      // For a numeric suffix, compare the names without the digits or '#'.
+      if ((token[long_length - 1] == '#')
+          and (keyword[keyword_length - 1] != '#')) {
         long_length--;
-        while (isdigit(commands[i][header_length - 1])) header_length--;
+        while (isdigit(keyword[keyword_length - 1])) keyword_length--;
       }
 
-      // Compare the keyword with the short or long form of the token.
-      if (header_length == short_length) {
-        for (uint8_t k  = 0; k < short_length; k++)
-          if (not (toupper(commands[i][k]) == tokens_[j][k]))
-            goto no_header_token_match;
-      } else if (header_length == long_length) {
-        for (uint8_t k  = 0; k < long_length; k++)
-          if (not (toupper(commands[i][k]) == toupper(tokens_[j][k])))
-            goto no_header_token_match;
-      } else {
-            goto no_header_token_match;
+      const bool matches_short_length = (keyword_length == short_length);
+      if (not matches_short_length and keyword_length != long_length) continue;
+
+      size_t matched_chars = 0;
+      for (; matched_chars < keyword_length; matched_chars++) {
+        int expected = token[matched_chars];
+        if (not matches_short_length) expected = toupper(expected);
+        if (toupper(keyword[matched_chars]) != expected) break;
       }
-
-      //Apply the hashing step using token number j
-      //hash(i) = hash(i - 1) * hash_magic_number + j
-      code *= hash_magic_number;
-      code += j;
-      break;
-
-      no_header_token_match:;
-      // Return unknown_hash after the last token fails to match.
-      if (j == (tokens_size_ - 1)) return unknown_hash;
+      if (matched_chars == keyword_length) break;
     }
-    // Apply an extra hashing step for the query marker.
+
+    if (token_index == tokens_size_) return invalid_command;
+
+    // The token index identifies the keyword in the hash.
+    code *= hash_magic_number;
+    code += token_index;
+
+    // Distinguish a query from a command with the same keywords.
     if (is_query) {
       code *= hash_magic_number;
       code -= 1;
     }
   }
-  return code;
+  return {
+    code,            // Calculated hash.
+    false,           // The command is valid.
+    commands.Size()  // Number of keywords.
+  };
 }
 
 void SCPI_Parser::ResetCommandTreeBase_() {
@@ -154,8 +160,7 @@ SCPI_Parser::CommandCode SCPI_Parser::PrepareCommand_(char* command) {
   SCPI_Commands command_tokens(command);
   for (uint8_t i = 0; i < command_tokens.Size(); i++)
     this->AddToken_(command_tokens[i]);
-  CommandCode result = {
-      this->GetCommandCode_(command_tokens), false, command_tokens.Size()};
+  CommandCode result = this->GetCommandCode_(command_tokens);
 
   const int branch_length = tree_code_.length + result.length;
   const bool branch_too_long =
@@ -163,16 +168,13 @@ SCPI_Parser::CommandCode SCPI_Parser::PrepareCommand_(char* command) {
       or (branch_length > command_tokens.storage_size);
   setup_errors.branch_overflow |= branch_too_long;
 
-  result.invalid =
-      branch_too_long
-      or (result.code == invalid_hash)
-      or (result.code == unknown_hash);
+  result.invalid |= branch_too_long;
   return result;
 }
 
 /*!
  Registers a command and its callback.
- If registration fails and space remains, stores an invalid entry with DoNothing as its callback.
+ If registration fails and space remains, stores the callback in an invalid entry.
  @param command  New valid command.
  @param caller  Function to call when the command is received.
 */
@@ -184,13 +186,9 @@ void SCPI_Parser::RegisterCommand(char* command, SCPI_caller_t caller) {
     return;
   }
 
-  if (result.invalid) {
-    valid_codes_[codes_size_] = invalid_hash;
-    callers_[codes_size_] = DoNothing;
-  } else {
-    valid_codes_[codes_size_] = result.code;
-    callers_[codes_size_] = caller;
-  }
+  registered_command_codes_[codes_size_] = result.code;
+  registered_command_validity_[codes_size_] = not result.invalid;
+  callers_[codes_size_] = caller;
   codes_size_++;
 }
 
@@ -250,15 +248,16 @@ void SCPI_Parser::Execute(char* message, Stream &interface) {
     SCPI_Commands commands(message);
     message = next_command;
     SCPI_Parameters parameters(commands.not_processed_message);
-    scpi_hash_t code = this->GetCommandCode_(commands);
-    if (code == unknown_hash) {
+    const CommandCode result = this->GetCommandCode_(commands);
+    if (result.invalid) {
       // Report an unknown command.
       last_error = ErrorCode::UnknownCommand;
       (*callers_[max_commands])(commands, parameters, interface);
       continue;
     }
     for (uint8_t i = 0; i < codes_size_; i++)
-      if (valid_codes_[i] == code) {
+      if (registered_command_validity_[i]
+          and (registered_command_codes_[i] == result.code)) {
         (*callers_[i])(commands, parameters, interface);
         break;
       }  
@@ -311,13 +310,16 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
       *separator = '\0';
       ResetCommandTreeBase_();
       SCPI_Commands commands(msg_buffer_);
-      scpi_hash_t code = this->GetCommandCode_(commands);
-      for (uint8_t i = 0; i < special_codes_size_; i++) 
-        if (valid_special_codes_[i] == code) {
-          (*special_callers_[i])(commands, interface);
-          message_length_ = 0;
-          return msg_buffer_;
-        }
+      const CommandCode result = this->GetCommandCode_(commands);
+      if (not result.invalid) {
+        for (uint8_t i = 0; i < special_codes_size_; i++)
+          if (special_command_validity_[i]
+              and special_command_codes_[i] == result.code) {
+            (*special_callers_[i])(commands, interface);
+            message_length_ = 0;
+            return msg_buffer_;
+          }
+      }
       // Restore the original message for normal command parsing.
       *separator = separator_char;
       for (uint8_t i = 0; i < commands.Size()-1; i++)
@@ -384,7 +386,6 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
   interface.println();
   
   bool hash_crash = false;
-  bool unknown_error = false;
   bool invalid_error = false;
   interface.print(F("VALID CODES : "));
   interface.print(codes_size_);
@@ -398,16 +399,14 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
     interface.print(F("  "));
     interface.print(i+1);
     interface.print(F(":\t"));
-    interface.print(valid_codes_[i], HEX);
-    if (valid_codes_[i] == unknown_hash) {
-      interface.print(F("!*"));
-      unknown_error = true;
-    } else if (valid_codes_[i] == invalid_hash) {
+    interface.print(registered_command_codes_[i], HEX);
+    if (not registered_command_validity_[i]) {
       interface.print(F("!%"));
       invalid_error = true;
     } else 
       for (uint8_t j = 0; j < i; j++) 
-        if (valid_codes_[i] == valid_codes_[j]) {
+        if (registered_command_validity_[j]
+            and registered_command_codes_[i] == registered_command_codes_[j]) {
           interface.print("!!");
           hash_crash = true;
           break;
@@ -417,8 +416,6 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
     interface.println();
     interface.flush();
   }
-  if (unknown_error) 
-    interface.println(F(" **ERROR** Tried to register ukwnonk tokens. (!*)"));
   if (invalid_error) 
     interface.println(F(" **ERROR** Tried to register invalid commands. (!%)"));
   if (hash_crash) 
@@ -426,7 +423,6 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
 
   #if SCPI_MAX_SPECIAL_COMMANDS
   hash_crash = false;
-  unknown_error = false;
   invalid_error = false;
   interface.println();
   interface.print(F("VALID SPECIAL CODES : "));
@@ -441,16 +437,14 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
     interface.print(F("  "));
     interface.print(i+1);
     interface.print(F(":\t"));
-    interface.print(valid_special_codes_[i], HEX);
-    if (valid_special_codes_[i] == unknown_hash) {
-      interface.print(F("!*"));
-      unknown_error = true;
-    } else if (valid_special_codes_[i] == invalid_hash) {
+    interface.print(special_command_codes_[i], HEX);
+    if (not special_command_validity_[i]) {
       interface.print(F("!%"));
       invalid_error = true;
     } else
       for (uint8_t j = 0; j < i; j++)
-        if (valid_special_codes_[i] == valid_special_codes_[j]) {
+        if (special_command_validity_[j]
+            and special_command_codes_[i] == special_command_codes_[j]) {
           interface.print("!!");
           hash_crash = true;
           break;
@@ -460,8 +454,6 @@ void SCPI_Parser::PrintDebugInfo(Stream& interface)
     interface.println();
     interface.flush();
   }
-  if (unknown_error) 
-    interface.println(F(" **ERROR** Tried to register ukwnonk tokens. (!*)"));
   if (invalid_error) 
     interface.println(F(" **ERROR** Tried to register invalid commands. (!%)"));
   if (hash_crash) 

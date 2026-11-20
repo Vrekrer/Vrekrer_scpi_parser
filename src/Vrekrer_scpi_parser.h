@@ -191,20 +191,15 @@ class SCPI_Parser {
     //Special command storage overflow error
     bool special_command_overflow = false;
   } setup_errors;
-  //Hash result for unknown commands
-  const scpi_hash_t unknown_hash = 0;
-  //Hash reserved for invalid commands
-  const scpi_hash_t invalid_hash = 1;
-
   //Add a token to the tokens' storage
   void AddToken_(char* token);
-  //Get a hash from a command
-  scpi_hash_t GetCommandCode_(SCPI_Commands& commands);
   struct CommandCode {
     scpi_hash_t code;
     bool invalid;
     uint8_t length; // Number of keywords in the parsed fragment.
   };
+  // Calculates the command hash and reports whether the tokens matched.
+  CommandCode GetCommandCode_(SCPI_Commands& commands);
   // Registers the tokens and checks the command before storing its callback.
   CommandCode PrepareCommand_(char* command);
   // Restores the root as the command base.
@@ -216,7 +211,9 @@ class SCPI_Parser {
   //Number of registered commands
   uint8_t codes_size_ = 0;
   //Registered commands' hash storage
-  scpi_hash_t valid_codes_[SCPI_MAX_COMMANDS];
+  scpi_hash_t registered_command_codes_[SCPI_MAX_COMMANDS];
+  // Whether each registered command can be dispatched.
+  bool registered_command_validity_[SCPI_MAX_COMMANDS];
   //Pointers to the functions to be called when a valid command is received
   SCPI_caller_t callers_[SCPI_MAX_COMMANDS+1];
   // Hash, validity, and length of the base path. A zero length denotes the root.
@@ -234,7 +231,9 @@ class SCPI_Parser {
   //Number of registered special commands
   uint8_t special_codes_size_ = 0;
   //Registered special commands' hash storage
-  scpi_hash_t valid_special_codes_[SCPI_MAX_SPECIAL_COMMANDS];
+  scpi_hash_t special_command_codes_[SCPI_MAX_SPECIAL_COMMANDS];
+  // Whether each registered special command can be dispatched.
+  bool special_command_validity_[SCPI_MAX_SPECIAL_COMMANDS];
   //Pointers to the functions to be called when a special command is received
   SCPI_special_caller_t special_callers_[SCPI_MAX_SPECIAL_COMMANDS];
   #endif

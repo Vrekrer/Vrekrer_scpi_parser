@@ -4,11 +4,9 @@
 
 #if SCPI_MAX_SPECIAL_COMMANDS
 
-void DoNothing(SCPI_C, Stream&) {}
-
 /*!
  Registers a special command and its callback.
- If registration fails and space remains, stores an invalid entry with DoNothing as its callback.
+ If registration fails and space remains, stores the callback in an invalid entry.
  @param command  New valid command.
  @param caller  Function to call when the special command is received.
 */
@@ -21,13 +19,9 @@ void SCPI_Parser::RegisterSpecialCommand(char* command,
     return;
   }
 
-  if (result.invalid) {
-    valid_special_codes_[special_codes_size_] = invalid_hash;
-    special_callers_[special_codes_size_] = DoNothing;
-  } else {
-    valid_special_codes_[special_codes_size_] = result.code;
-    special_callers_[special_codes_size_] = caller;
-  }
+  special_command_codes_[special_codes_size_] = result.code;
+  special_command_validity_[special_codes_size_] = not result.invalid;
+  special_callers_[special_codes_size_] = caller;
   special_codes_size_++;
 }
 
