@@ -314,8 +314,8 @@ char* SCPI_Parser::GetMessage(Stream& interface, const char* term_chars) {
     msg_buffer_[message_length_] = '\0';
 
     #if SCPI_MAX_SPECIAL_COMMANDS
-    // Check for a special command at the first space or tab.
-    char* separator = strpbrk(msg_buffer_, " \t");
+    // Check for a special command when the first header separator arrives.
+    char* separator = strpbrk(msg_buffer_, scpi_header_separators);
     if (separator == &msg_buffer_[message_length_ - 1]) {
       const char separator_char = *separator;
       *separator = '\0';

@@ -2,6 +2,8 @@
 // This allows Arduino IDE users to configure options with #define directives 
 // Do not include Vrekrer_scpi_parser.h here
 
+static constexpr char scpi_header_separators[] = " \t\r";
+
 // ## SCPI_String_Array member functions ##
 
 ///Add indexing capability.
@@ -52,7 +54,7 @@ SCPI_Commands::SCPI_Commands(){}
  Extracts the command header and splits it into tokens.
  @param message  Message to process.
 
- The header ends at the first space, tab, or end of the string.
+ The header ends at the first space, tab, carriage return, or end of the string.
  The remaining text is available through not_processed_message.
  The header is split at colons, and the tokens are stored in the array.
 */
@@ -61,7 +63,7 @@ SCPI_Commands::SCPI_Commands(char* message) {
   // Skip leading whitespace.
   while (isspace(*token)) token++;
   // Keep a pointer to the rest of the message.
-  not_processed_message = strpbrk(token, " \t");
+  not_processed_message = strpbrk(token, scpi_header_separators);
   if (not_processed_message != NULL) {
    not_processed_message[0] = '\0';
    not_processed_message++;
