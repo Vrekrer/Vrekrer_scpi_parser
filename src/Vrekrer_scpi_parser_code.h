@@ -69,6 +69,7 @@ SCPI_Parser::CommandCode SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
         (i + 1 == commands.Size())  // Last keyword only.
         and (keyword[keyword_length - 1] == '?');
     if (is_query) keyword_length--; // Ignore the trailing '?'
+    if (keyword_length == 0) return invalid_command;
 
     // Find the first registered token that matches this keyword.
     uint8_t token_index = 0;
@@ -79,13 +80,16 @@ SCPI_Parser::CommandCode SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
       while (isupper(token[short_token_length])) short_token_length++;
 
       const bool is_numeric_sufix_token =
-          (keyword[keyword_length - 1] != '#') //Used on commad registration
+          (keyword[keyword_length - 1] != '#') //Used in command registration.
           and (token[long_token_length - 1] == '#');
       if (is_numeric_sufix_token) {
         // Ignore the token's trailing '#'.
         long_token_length--;
         // Ignore trailing digits in the keyword.
-        while (isdigit(keyword[keyword_length - 1])) keyword_length--;
+        while (isdigit(keyword[keyword_length - 1])) {
+          keyword_length--;
+          if (keyword_length == 0) return invalid_command;
+        }
       }
 
       const bool keyword_matches_token_lengths =
