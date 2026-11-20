@@ -68,39 +68,46 @@ SCPI_Parser::CommandCode SCPI_Parser::GetCommandCode_(SCPI_Commands& commands) {
     const bool is_query =
         (i + 1 == commands.Size())  // Last keyword only.
         and (keyword[keyword_length - 1] == '?');
-    if (is_query) keyword_length--;
+    if (is_query) keyword_length--; // Ignore the trailing '?'
 
     // Find the first registered token that matches this keyword.
     uint8_t token_index = 0;
     for (; token_index < tokens_size_; token_index++) {
       const char* token = tokens_[token_index];
-      // The initial uppercase letters define the short form.
-      size_t short_length = 0;
-      while (isupper(token[short_length])) short_length++;
-      size_t long_length = strlen(token);
+      size_t long_token_length = strlen(token);
+      size_t short_token_length = 0;
+      while (isupper(token[short_token_length])) short_token_length++;
 
-      // For a numeric suffix, compare the names without the digits or '#'.
-      if ((token[long_length - 1] == '#')
-          and (keyword[keyword_length - 1] != '#')) {
-        long_length--;
+      const bool is_numeric_sufix_token =
+          (keyword[keyword_length - 1] != '#') //Used on commad registration
+          and (token[long_token_length - 1] == '#');
+      if (is_numeric_sufix_token) {
+        // Ignore the token's trailing '#'.
+        long_token_length--;
+        // Ignore trailing digits in the keyword.
         while (isdigit(keyword[keyword_length - 1])) keyword_length--;
       }
 
-      const bool matches_short_length = (keyword_length == short_length);
-      if (not matches_short_length and keyword_length != long_length) continue;
-
-      size_t matched_chars = 0;
-      for (; matched_chars < keyword_length; matched_chars++) {
-        int expected = token[matched_chars];
-        if (not matches_short_length) expected = toupper(expected);
-        if (toupper(keyword[matched_chars]) != expected) break;
+      const bool keyword_matches_token_lengths =
+          (keyword_length == short_token_length)
+          or (keyword_length == long_token_length);
+      if (keyword_matches_token_lengths
+          and (strncasecmp(keyword, token, keyword_length) == 0)) {
+        // Keep the matching token_index as the result of the search.
+        break;
       }
-      if (matched_chars == keyword_length) break;
+
+      // Restore the keyword length before trying the next token.
+      if (is_numeric_sufix_token) {
+        keyword_length = strlen(keyword);
+        if (is_query) keyword_length--;
+      }
     }
 
+    // Reached the end of the token list without a match.
     if (token_index == tokens_size_) return invalid_command;
 
-    // The token index identifies the keyword in the hash.
+    // Update the hash with the matched token index.
     code *= hash_magic_number;
     code += token_index;
 
