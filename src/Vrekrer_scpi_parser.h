@@ -206,6 +206,8 @@ class SCPI_Parser {
   void ResetCommandTreeBase_();
   //Number of stored tokens
   uint8_t tokens_size_ = 0;
+  //Static storage for tokens (eliminates heap allocation)
+  char tokens_storage_[SCPI_MAX_TOKENS][SCPI_BUFFER_LENGTH];
   //Storage for tokens
   char *tokens_[SCPI_MAX_TOKENS];
   //Number of registered commands
